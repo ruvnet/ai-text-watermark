@@ -19,7 +19,7 @@
 
 > **AI text watermarking** marks machine-generated writing so it can be recognised later — a requirement of the **EU AI Act** (in force Aug 2026) that major providers, including Anthropic (SynthID-Text), are adopting. This library implements that method as a fast, embeddable WASM module and Rust crate, with an interactive playground.
 
-![Story + playground](docs/screenshots/hero.png)
+![Story + playground](docs/screenshots/hero.jpg)
 
 ## Why watermark AI text?
 
@@ -90,7 +90,7 @@ A model writes one word at a time, and at most steps **several next words are eq
 
 **[▶ See the animated explainer & try it live →](https://ruvnet.github.io/ai-text-watermark/)**
 
-![Live playground](docs/screenshots/playground.png)
+![Live playground](docs/screenshots/playground.jpg)
 
 ## Schemes & detectors
 
