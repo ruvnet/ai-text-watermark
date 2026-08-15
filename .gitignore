@@ -1,0 +1,15 @@
+/target
+**/target
+node_modules/
+pkg/
+pkg-*/
+*.tgz
+.DS_Store
+*.rvf
+*.rvf.*
+*.db
+*.db-*
+.swarm/
+.claude-flow/
+.ruvnet-brain/
+.ruvector/

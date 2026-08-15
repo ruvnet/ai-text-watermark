@@ -1,0 +1,152 @@
+<div align="center">
+
+# 🔏 AI Text Watermark
+
+### Invisible, key-verifiable watermarks for LLM-generated text — in Rust + WebAssembly.
+
+**Generate** a watermark that rides the model's own word choices, then **detect** it later with a secret key. SynthID-Text-style provenance for AI content — no extra tokens, no quality loss, Node **and** browser.
+
+[![npm](https://img.shields.io/npm/v/@claude-flow/watermark?color=34e0a1&label=%40claude-flow%2Fwatermark)](https://www.npmjs.com/package/@claude-flow/watermark)
+[![crates.io](https://img.shields.io/crates/v/ruflo-watermark?color=e0ad4d&label=ruflo-watermark)](https://crates.io/crates/ruflo-watermark)
+[![license](https://img.shields.io/badge/license-MIT-blue)](./LICENSE)
+[![wasm](https://img.shields.io/badge/wasm-Node%20%2B%20Browser-purple)](#install)
+
+**[▶ Live demo & playground](https://ruvnet.github.io/ai-text-watermark/)** · **[How it works](https://ruvnet.github.io/ai-text-watermark/#story)** · **[npm](https://www.npmjs.com/package/@claude-flow/watermark)** · **[crate](https://crates.io/crates/ruflo-watermark)**
+
+</div>
+
+---
+
+> **AI text watermarking** marks machine-generated writing so it can be recognised later — a requirement of the **EU AI Act** (in force Aug 2026) that major providers, including Anthropic (SynthID-Text), are adopting. This library implements that method as a fast, embeddable WASM module and Rust crate, with an interactive playground.
+
+![Story + playground](docs/screenshots/hero.png)
+
+## Why watermark AI text?
+
+You can't stamp a logo on a sentence. AI text watermarking hides an **invisible, statistical signature** in the low-stakes word choices a model already makes — undetectable to a reader, but provable to anyone holding the key. It answers one question: *was a keyed model likely involved?* It carries **no user information** and is **not** a way to hide that AI was used.
+
+- ✅ **No quality loss, no extra tokens, no added latency** — the mark lives in ties between equally-plausible words.
+- ✅ **Key-verifiable** — a wrong key sees nothing; the mark identifies the *model/provider*, never a person.
+- ✅ **Node + browser** via WebAssembly — nothing to compile.
+- ✅ **Honest about limits** — short/factual/code text carries little mark; confidence grows with length.
+- 🚫 **No removal / laundering tool** — this library only *writes* and *checks* marks.
+
+## Install
+
+**JavaScript / TypeScript (npm):**
+
+```bash
+npm install @claude-flow/watermark
+```
+
+**Rust (crates.io):**
+
+```bash
+cargo add ruflo-watermark
+```
+
+## Quick start
+
+### Node
+
+```js
+const { Watermarker, detect } = require('@claude-flow/watermark');
+
+// You supply the model's candidate token ids + probabilities each step;
+// the watermarker returns which candidate to emit.
+const wm = new Watermarker({ key: 'my-secret', scheme: 'gumbel' });
+const out = new Uint32Array(600);
+for (let i = 0; i < out.length; i++) out[i] = candidates[wm.step(candidates, probs)];
+wm.free();
+
+const r = detect(out, { key: 'my-secret', scheme: 'gumbel' });
+console.log(r.zScore, r.isWatermarked(1e-6)); // strong signal, true
+```
+
+### Browser / Deno / bundlers
+
+```js
+import { init, Watermarker, detect } from '@claude-flow/watermark/web';
+await init();                       // auto-fetches the wasm
+const wm = new Watermarker({ key: 'my-secret', scheme: 'gumbel' });
+```
+
+### Rust
+
+```rust
+use ruflo_watermark::{Watermarker, WatermarkConfig, WatermarkKey, Scheme, detect_gumbel};
+
+let cfg = WatermarkConfig::new(WatermarkKey::from_bytes(b"my-secret"));
+let mut wm = Watermarker::new(cfg, Scheme::Gumbel);
+let idx = wm.step(&candidate_ids, &probs);         // emit one token
+// … collect a sequence, then:
+let r = detect_gumbel(&tokens, cfg);
+assert!(r.is_watermarked(1e-6));
+```
+
+## How it works (60 seconds)
+
+A model writes one word at a time, and at most steps **several next words are equally good** ("cold and **overcast** / **grey**"). Normally a tie is broken by a private dice roll. Watermarking keeps the odds identical but changes the *source of that randomness*: a **secret key + the preceding words** decide the winner — like playing a game with the digits of π instead of dice. Later, anyone with the key re-walks the text and checks how often it matched what the key would have chosen. Enough matches, and coincidence is ruled out.
+
+**[▶ See the animated explainer & try it live →](https://ruvnet.github.io/ai-text-watermark/)**
+
+![Live playground](docs/screenshots/playground.png)
+
+## Schemes & detectors
+
+| scheme | property |
+|---|---|
+| `gumbel` *(default)* | Provably **distortion-free** — the model's word distribution is unchanged. |
+| `tournament` | SynthID-Text tournament — a **stronger** mark for a whisper of bias. |
+| `tournament_nd` | **Non-distortionary on average** (key-averaged, measured < 0.3% drift). |
+
+| detector | for |
+|---|---|
+| `detect` | the scheme's standard detector |
+| `detectSelfSync` | **indel-robust** — survives edits, deletions, rearrangement |
+| `detectExact` | **short text** — exact p-values where the normal approximation misleads |
+
+Every detection returns `{ zScore, pValue, log10P, scoredPositions, isWatermarked(alpha) }`.
+
+## Use cases
+
+- **EU AI Act / transparency compliance** — mark model output so it's later recognisable as AI-assisted.
+- **Content provenance & platform trust & safety** — flag likely-AI passages at scale, cheaply (detection scans at ~10M tokens/sec).
+- **Dataset hygiene** — detect and exclude your own model's output from training data to avoid model collapse.
+- **Leak / policy attribution** — check whether a passage rode *your* key (a wrong key sees nothing).
+- **Watermark research & red-teaming** — a built-in robustness harness measures how detection degrades under editing (Rust crate).
+- **Authorized un-marked generation** — a governed, audited path to *not* apply the mark for exempt content (Rust crate; never a post-hoc stripper).
+
+## Benefits
+
+- ⚡ **Fast** — single-digit microseconds per token to generate; ~10M tokens/sec to detect.
+- 🪶 **Tiny & portable** — a 37 KB WebAssembly module, dependency-free core.
+- 🔬 **Honest & tested** — 46 Rust tests; distortion-freeness, key-specificity, length/entropy scaling and robustness all measured, not asserted.
+- 🧩 **Model-agnostic** — logits in, watermarked token out; wire it to any tokenizer/model.
+
+## Packages
+
+| what | where |
+|---|---|
+| npm (Node + browser WASM) | [`@claude-flow/watermark`](https://www.npmjs.com/package/@claude-flow/watermark) · [`packages/watermark`](./packages/watermark) |
+| Rust crate | [`ruflo-watermark`](https://crates.io/crates/ruflo-watermark) · [`crates/ruflo-watermark`](./crates/ruflo-watermark) |
+| Live site (story + playground) | [`docs/`](./docs) → GitHub Pages |
+
+## Design decisions (ADRs)
+
+- [ADR-383 — Watermarking (SynthID-Text) as a Rust/WASM component](./docs/adr/ADR-383-watermarking-synthid-rust-wasm.md)
+- [ADR-384 — Generalized bounded-evolution methodology (the detector-tuner's foundation)](./docs/adr/ADR-384-generalized-bounded-evolution-methodology.md)
+
+## Method & prior art
+
+SynthID-Text (Dathathri et al., *Nature* 2024), and the distortion-free family of Aaronson (2022) and Kuditipudi et al. (2024). See ADR-383 for the full comparison.
+
+## License
+
+MIT © [rUv](https://github.com/ruvnet)
+
+---
+
+<div align="center">
+<sub><b>Keywords:</b> AI text watermark · LLM watermarking · SynthID · SynthID-Text · AI content detection · AI provenance · EU AI Act · text watermark · WASM · Rust · distortion-free watermark · Gumbel watermark · content credentials</sub>
+</div>
