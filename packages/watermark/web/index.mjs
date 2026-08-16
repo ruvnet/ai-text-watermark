@@ -9,6 +9,7 @@
 
 import initWasm, {
   WasmWatermarker,
+  WasmStreamProxy,
   detect as _detect,
   detect_selfsync as _detectSelfSync,
   detect_exact as _detectExact,
@@ -65,6 +66,26 @@ export class Watermarker {
   }
   step(tokens, probs) {
     return this._inner.step(toU32(tokens), toF32(probs));
+  }
+  free() {
+    this._inner.free();
+  }
+}
+
+/** Ultra-low-latency streaming watermark proxy (call `await init()` first). */
+export class StreamProxy {
+  constructor({ key, scheme = 'gumbel', contextWidth = 4, layers = 6, temperature = 1.0, topK = 0, topP = 1.0 } = {}) {
+    assertReady();
+    this._inner = new WasmStreamProxy(toKeyBytes(key), contextWidth, layers, normScheme(scheme), temperature, topK >>> 0, topP);
+  }
+  pushLogits(logits) {
+    return this._inner.push_logits(toF32(logits));
+  }
+  pushTopK(tokenIds, logprobs) {
+    return this._inner.push_topk(toU32(tokenIds), toF32(logprobs));
+  }
+  get steps() {
+    return this._inner.steps;
   }
   free() {
     this._inner.free();

@@ -53,6 +53,88 @@ if (Symbol.dispose) WasmDetection.prototype[Symbol.dispose] = WasmDetection.prot
 exports.WasmDetection = WasmDetection;
 
 /**
+ * Ultra-low-latency streaming watermark **proxy**, JS-facing.
+ *
+ * Wraps [`StreamProxy`]: feed it a decode step's **logits** (or a truncated
+ * top-k `(ids, logprobs)` set from an OpenAI-compatible API) and it returns
+ * the watermarked **token id** to emit, applying temperature + top-k/top-p to
+ * match the host sampler. Scratch buffers are reused, so per-step cost is a
+ * fixed amount on top of the sampler you already run.
+ */
+class WasmStreamProxy {
+    __destroy_into_raw() {
+        const ptr = this.__wbg_ptr;
+        this.__wbg_ptr = 0;
+        WasmStreamProxyFinalization.unregister(this);
+        return ptr;
+    }
+    free() {
+        const ptr = this.__destroy_into_raw();
+        wasm.__wbg_wasmstreamproxy_free(ptr, 0);
+    }
+    /**
+     * `key_material`: secret bytes. `scheme`: `"tournament"` | `"tournament_nd"`
+     * | `"gumbel"`. `temperature` (>0), `top_k` (0 = all), `top_p` (>=1 = off)
+     * shape the candidate set exactly as the host decoder would.
+     * @param {Uint8Array} key_material
+     * @param {number} context_width
+     * @param {number} layers
+     * @param {string} scheme
+     * @param {number} temperature
+     * @param {number} top_k
+     * @param {number} top_p
+     */
+    constructor(key_material, context_width, layers, scheme, temperature, top_k, top_p) {
+        const ptr0 = passArray8ToWasm0(key_material, wasm.__wbindgen_malloc);
+        const len0 = WASM_VECTOR_LEN;
+        const ptr1 = passStringToWasm0(scheme, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
+        const len1 = WASM_VECTOR_LEN;
+        const ret = wasm.wasmstreamproxy_new(ptr0, len0, context_width, layers, ptr1, len1, temperature, top_k, top_p);
+        this.__wbg_ptr = ret;
+        WasmStreamProxyFinalization.register(this, this.__wbg_ptr, this);
+        return this;
+    }
+    /**
+     * Full-vocab path: `logits[i]` is the logit for token id `i`. Returns the
+     * watermarked token id to emit and advances the rolling context.
+     * @param {Float32Array} logits
+     * @returns {number}
+     */
+    push_logits(logits) {
+        const ptr0 = passArrayF32ToWasm0(logits, wasm.__wbindgen_malloc);
+        const len0 = WASM_VECTOR_LEN;
+        const ret = wasm.wasmstreamproxy_push_logits(this.__wbg_ptr, ptr0, len0);
+        return ret >>> 0;
+    }
+    /**
+     * Truncated path: watermark an already-small candidate set of
+     * `(token_ids, logprobs)` (e.g. OpenAI `top_logprobs`). Returns the token
+     * id to emit. `top_k` is ignored; the set is already truncated.
+     * @param {Uint32Array} token_ids
+     * @param {Float32Array} logprobs
+     * @returns {number}
+     */
+    push_topk(token_ids, logprobs) {
+        const ptr0 = passArray32ToWasm0(token_ids, wasm.__wbindgen_malloc);
+        const len0 = WASM_VECTOR_LEN;
+        const ptr1 = passArrayF32ToWasm0(logprobs, wasm.__wbindgen_malloc);
+        const len1 = WASM_VECTOR_LEN;
+        const ret = wasm.wasmstreamproxy_push_topk(this.__wbg_ptr, ptr0, len0, ptr1, len1);
+        return ret >>> 0;
+    }
+    /**
+     * Tokens emitted so far.
+     * @returns {number}
+     */
+    get steps() {
+        const ret = wasm.wasmstreamproxy_steps(this.__wbg_ptr);
+        return ret >>> 0;
+    }
+}
+if (Symbol.dispose) WasmStreamProxy.prototype[Symbol.dispose] = WasmStreamProxy.prototype.free;
+exports.WasmStreamProxy = WasmStreamProxy;
+
+/**
  * Streaming watermarked sampler, JS-facing.
  */
 class WasmWatermarker {
@@ -184,6 +266,9 @@ function __wbg_get_imports() {
 const WasmDetectionFinalization = (typeof FinalizationRegistry === 'undefined')
     ? { register: () => {}, unregister: () => {} }
     : new FinalizationRegistry(ptr => wasm.__wbg_wasmdetection_free(ptr, 1));
+const WasmStreamProxyFinalization = (typeof FinalizationRegistry === 'undefined')
+    ? { register: () => {}, unregister: () => {} }
+    : new FinalizationRegistry(ptr => wasm.__wbg_wasmstreamproxy_free(ptr, 1));
 const WasmWatermarkerFinalization = (typeof FinalizationRegistry === 'undefined')
     ? { register: () => {}, unregister: () => {} }
     : new FinalizationRegistry(ptr => wasm.__wbg_wasmwatermarker_free(ptr, 1));

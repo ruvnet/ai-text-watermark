@@ -69,6 +69,45 @@ class Watermarker {
   }
 }
 
+/**
+ * Ultra-low-latency streaming watermark **proxy**. Drop into a decode loop:
+ * feed it a step's raw logits (or a truncated top-k `(ids, logprobs)` set from
+ * an OpenAI-compatible API) and it returns the watermarked token id to emit,
+ * applying temperature + top-k/top-p to match your sampler. Reuses scratch
+ * buffers, so per-step cost is fixed on top of the sampling you already do.
+ */
+class StreamProxy {
+  /**
+   * @param {object} opts
+   * @param {string|Uint8Array} opts.key
+   * @param {'tournament'|'tournament_nd'|'gumbel'} [opts.scheme='gumbel']
+   * @param {number} [opts.contextWidth=4]
+   * @param {number} [opts.layers=6]
+   * @param {number} [opts.temperature=1.0]  softmax temperature (>0)
+   * @param {number} [opts.topK=0]           keep top-K logits (0 = all)
+   * @param {number} [opts.topP=1.0]         nucleus threshold (>=1 = off)
+   */
+  constructor({ key, scheme = 'gumbel', contextWidth = 4, layers = 6, temperature = 1.0, topK = 0, topP = 1.0 } = {}) {
+    this._inner = new wasm.WasmStreamProxy(toKeyBytes(key), contextWidth, layers, normScheme(scheme), temperature, topK >>> 0, topP);
+  }
+  /** Full-vocab path: `logits[i]` is the logit for token id `i`. Returns the token id to emit. */
+  pushLogits(logits) {
+    return this._inner.push_logits(toF32(logits));
+  }
+  /** Truncated path: watermark an already-small `(tokenIds, logprobs)` set. Returns the token id to emit. */
+  pushTopK(tokenIds, logprobs) {
+    return this._inner.push_topk(toU32(tokenIds), toF32(logprobs));
+  }
+  /** Tokens emitted so far. */
+  get steps() {
+    return this._inner.steps;
+  }
+  /** Release the WASM instance. */
+  free() {
+    this._inner.free();
+  }
+}
+
 /** Detect a watermark over an emitted token-id sequence using the named scheme. */
 function detect(tokens, { key, scheme = 'gumbel', contextWidth = 4, layers = 6 } = {}) {
   return shape(wasm.detect(toU32(tokens), toKeyBytes(key), contextWidth, layers, normScheme(scheme)));
@@ -84,4 +123,4 @@ function detectExact(tokens, { key, contextWidth = 4 } = {}) {
   return shape(wasm.detect_exact(toU32(tokens), toKeyBytes(key), contextWidth));
 }
 
-module.exports = { Watermarker, detect, detectSelfSync, detectExact, SCHEMES };
+module.exports = { Watermarker, StreamProxy, detect, detectSelfSync, detectExact, SCHEMES };

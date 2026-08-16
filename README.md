@@ -84,6 +84,36 @@ let r = detect_gumbel(&tokens, cfg);
 assert!(r.is_watermarked(1e-6));
 ```
 
+## Ultra-low-latency proxy — watermark a live LLM stream
+
+`StreamProxy` drops into a decode loop between the model and the emitted token.
+Give it a step's raw **logits** (what a serving stack produces) or a truncated
+top-k `(ids, logprobs)` set (what an OpenAI-compatible API returns); it applies
+temperature + top-k/top-p to match your sampler, watermarks the candidate set,
+and returns the **token id** to emit. Scratch buffers are reused, so per-token
+cost is fixed and allocation-free after warmup — the mark rides the sampling you
+already do.
+
+```js
+const { StreamProxy, detect } = require('@claude-flow/watermark');
+
+// In front of a local serving stack (vLLM / llama.cpp / Candle): full-vocab logits.
+const proxy = new StreamProxy({ key: 'my-secret', scheme: 'gumbel', temperature: 0.9, topK: 40, topP: 0.95 });
+const out = [];
+for (const logits of decodeSteps) out.push(proxy.pushLogits(logits));  // logits → watermarked token id
+proxy.free();
+
+// …or in front of an OpenAI-compatible API that returns top_logprobs per token:
+//   proxy.pushTopK(tokenIds, logprobs)   // watermark the returned candidate set
+
+detect(Uint32Array.from(out), { key: 'my-secret', scheme: 'gumbel' }).isWatermarked(1e-6); // true
+```
+
+Same class in Rust (`ruflo_watermark::StreamProxy`) and in the browser
+(`import { StreamProxy } from '@claude-flow/watermark/web'`). It's a gateway
+front-end, not a new scheme — a proxy stream detects identically to a
+`Watermarker` stream.
+
 ## How it works (60 seconds)
 
 A model writes one word at a time, and at most steps **several next words are equally good** ("cold and **overcast** / **grey**"). Normally a tie is broken by a private dice roll. Watermarking keeps the odds identical but changes the *source of that randomness*: a **secret key + the preceding words** decide the winner — like playing a game with the digits of π instead of dice. Later, anyone with the key re-walks the text and checks how often it matched what the key would have chosen. Enough matches, and coincidence is ruled out.

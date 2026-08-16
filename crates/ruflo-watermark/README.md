@@ -13,7 +13,22 @@ detectable only with the key.
   Higher-Criticism.
 - **Extras:** a robustness-evaluation harness, a Darwin/flywheel detector-param
   tuner, and an authorized un-marked-generation governance path.
+- **`StreamProxy`:** an ultra-low-latency decode-loop proxy — logits in,
+  watermarked token id out, with temperature + top-k/top-p to match your
+  sampler and allocation-free scratch after warmup.
 - **Deliberately no watermark-removal / laundering tooling.**
+
+```rust
+use ruflo_watermark::{StreamProxy, ProxyConfig, WatermarkConfig, WatermarkKey, Scheme};
+
+// Drop into a decode loop in front of any local serving stack.
+let cfg = WatermarkConfig::new(WatermarkKey::from_bytes(b"my-secret"));
+let mut proxy = StreamProxy::new(cfg, Scheme::Gumbel,
+    ProxyConfig { temperature: 1.0, top_k: 40, top_p: 0.95 });
+let token_id = proxy.push_logits(&logits);      // full-vocab logits → watermarked token id
+// …or in front of an OpenAI-compatible API returning top_logprobs:
+let token_id = proxy.push_topk(&candidate_ids, &logprobs);
+```
 
 ```rust
 use ruflo_watermark::{Watermarker, WatermarkConfig, WatermarkKey, Scheme, detect_gumbel};

@@ -32,11 +32,37 @@ export interface SelfSyncOptions {
   contextWidth?: number;
 }
 
+export interface ProxyOptions extends WatermarkerOptions {
+  /** Softmax temperature applied to logits (default 1.0, >0). */
+  temperature?: number;
+  /** Keep only the top-K highest logits (default 0 = keep all). */
+  topK?: number;
+  /** Nucleus threshold: keep the smallest top set reaching this mass (default 1.0 = off). */
+  topP?: number;
+}
+
 /** Streaming watermarked sampler. */
 export class Watermarker {
   constructor(opts: WatermarkerOptions);
   /** Emit one token; returns the index of the chosen candidate. */
   step(tokens: Uint32Array | number[], probs: Float32Array | number[]): number;
+  /** Release the WASM instance. */
+  free(): void;
+}
+
+/**
+ * Ultra-low-latency streaming watermark proxy. Feed a decode step's logits (or
+ * a truncated top-k `(ids, logprobs)` set) and get the watermarked token id to
+ * emit — temperature + top-k/top-p applied to match your sampler.
+ */
+export class StreamProxy {
+  constructor(opts: ProxyOptions);
+  /** Full-vocab path: `logits[i]` is the logit for token id `i`. Returns the token id to emit. */
+  pushLogits(logits: Float32Array | number[]): number;
+  /** Truncated path: watermark an already-small `(tokenIds, logprobs)` set. Returns the token id to emit. */
+  pushTopK(tokenIds: Uint32Array | number[], logprobs: Float32Array | number[]): number;
+  /** Tokens emitted so far. */
+  readonly steps: number;
   /** Release the WASM instance. */
   free(): void;
 }

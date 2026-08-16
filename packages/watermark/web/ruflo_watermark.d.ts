@@ -15,6 +15,41 @@ export class WasmDetection {
 }
 
 /**
+ * Ultra-low-latency streaming watermark **proxy**, JS-facing.
+ *
+ * Wraps [`StreamProxy`]: feed it a decode step's **logits** (or a truncated
+ * top-k `(ids, logprobs)` set from an OpenAI-compatible API) and it returns
+ * the watermarked **token id** to emit, applying temperature + top-k/top-p to
+ * match the host sampler. Scratch buffers are reused, so per-step cost is a
+ * fixed amount on top of the sampler you already run.
+ */
+export class WasmStreamProxy {
+    free(): void;
+    [Symbol.dispose](): void;
+    /**
+     * `key_material`: secret bytes. `scheme`: `"tournament"` | `"tournament_nd"`
+     * | `"gumbel"`. `temperature` (>0), `top_k` (0 = all), `top_p` (>=1 = off)
+     * shape the candidate set exactly as the host decoder would.
+     */
+    constructor(key_material: Uint8Array, context_width: number, layers: number, scheme: string, temperature: number, top_k: number, top_p: number);
+    /**
+     * Full-vocab path: `logits[i]` is the logit for token id `i`. Returns the
+     * watermarked token id to emit and advances the rolling context.
+     */
+    push_logits(logits: Float32Array): number;
+    /**
+     * Truncated path: watermark an already-small candidate set of
+     * `(token_ids, logprobs)` (e.g. OpenAI `top_logprobs`). Returns the token
+     * id to emit. `top_k` is ignored; the set is already truncated.
+     */
+    push_topk(token_ids: Uint32Array, logprobs: Float32Array): number;
+    /**
+     * Tokens emitted so far.
+     */
+    readonly steps: number;
+}
+
+/**
  * Streaming watermarked sampler, JS-facing.
  */
 export class WasmWatermarker {
@@ -54,6 +89,7 @@ export type InitInput = RequestInfo | URL | Response | BufferSource | WebAssembl
 export interface InitOutput {
     readonly memory: WebAssembly.Memory;
     readonly __wbg_wasmdetection_free: (a: number, b: number) => void;
+    readonly __wbg_wasmstreamproxy_free: (a: number, b: number) => void;
     readonly __wbg_wasmwatermarker_free: (a: number, b: number) => void;
     readonly detect: (a: number, b: number, c: number, d: number, e: number, f: number, g: number, h: number) => number;
     readonly detect_exact: (a: number, b: number, c: number, d: number, e: number) => number;
@@ -62,6 +98,10 @@ export interface InitOutput {
     readonly wasmdetection_p_value: (a: number) => number;
     readonly wasmdetection_scored_positions: (a: number) => number;
     readonly wasmdetection_z_score: (a: number) => number;
+    readonly wasmstreamproxy_new: (a: number, b: number, c: number, d: number, e: number, f: number, g: number, h: number, i: number) => number;
+    readonly wasmstreamproxy_push_logits: (a: number, b: number, c: number) => number;
+    readonly wasmstreamproxy_push_topk: (a: number, b: number, c: number, d: number, e: number) => number;
+    readonly wasmstreamproxy_steps: (a: number) => number;
     readonly wasmwatermarker_new: (a: number, b: number, c: number, d: number, e: number, f: number) => number;
     readonly wasmwatermarker_step: (a: number, b: number, c: number, d: number, e: number) => number;
     readonly __wbindgen_externrefs: WebAssembly.Table;
