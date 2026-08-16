@@ -207,6 +207,8 @@ This project dogfoods it: the **[live playground](https://ruvnet.github.io/ai-te
 - [ADR-387 — Watermarking as a Cognitum service in meta-llm / meta-proxy](./docs/adr/ADR-387-metallm-watermarking-service.md)
 - [ADR-388 — Cognitum-OAuth-gated gateway-backed watermarked generation](./docs/adr/ADR-388-oauth-gated-gateway-watermarked-generation.md)
 - [ADR-389 — MidStream: inflight analysis of a live watermarked stream](./docs/adr/ADR-389-midstream-inflight-analysis.md)
+- [ADR-390 — Inflight LLM-stream reformatting via midstream (Google · OpenRouter · meta-llm)](./docs/adr/ADR-390-inflight-stream-reformatting-midstream.md)
+- [ADR-391 — Autogenous: governed self-evolving software organism](./docs/adr/ADR-391-autogenous-governed-self-evolving-architecture.md)
 
 ## Method & prior art
 
