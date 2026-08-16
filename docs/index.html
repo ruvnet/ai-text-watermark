@@ -384,9 +384,9 @@
       </section>
 
       <section class="card">
-        <h2>🕵 Secret message <span style="color:var(--muted);font-weight:400;text-transform:none;letter-spacing:0">· multi-bit</span></h2>
-        <p class="note" style="margin-top:0;margin-bottom:12px">Hide a short message <em>inside</em> the watermark. Each bit is carried by which of two key-derived streams marks a block of tokens — so the same text, read with the key, spells out your payload.</p>
-        <div class="f"><label>message <b id="capEcho">2 chars</b></label><input type="text" id="msg" value="AI" maxlength="8" spellcheck="false"></div>
+        <h2>🕵 Secret message <span style="color:var(--muted);font-weight:400;text-transform:none;letter-spacing:0">· multi-bit provenance</span></h2>
+        <p class="note" style="margin-top:0;margin-bottom:12px">Hide a short <b>provenance</b> payload <em>inside</em> the watermark. Each bit is carried by which of two key-derived streams marks a block of tokens — so the same text, read with the key, spells out your message. This project's own demo payload is <b>ruvnet</b>: embed it, then watch it come back bit-for-bit.</p>
+        <div class="f"><label>message <b id="capEcho">6 chars</b></label><input type="text" id="msg" value="ruvnet" maxlength="8" spellcheck="false"></div>
         <button class="go alt" id="embed">🔏 Embed &amp; extract</button>
         <div style="margin-top:14px">
           <div class="mk" style="font-family:var(--mono);font-size:.62rem;color:var(--muted);text-transform:uppercase;letter-spacing:.06em">recovered</div>

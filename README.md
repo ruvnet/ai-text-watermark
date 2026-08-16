@@ -138,6 +138,14 @@ A model writes one word at a time, and at most steps **several next words are eq
 
 Every detection returns `{ zScore, pValue, log10P, scoredPositions, isWatermarked(alpha) }`.
 
+## Provenance & secret message (multi-bit)
+
+Beyond the single "is this watermarked?" bit, you can embed a **short provenance payload** — a model id, a run tag, an author handle — *inside* the same invisible mark. Each message bit is carried by **which of two key-derived streams** watermarks a block of tokens; extraction detects each block under both keys and takes the stronger, spelling the payload back. It needs only the key and block size — never the original text or candidate sets.
+
+This project dogfoods it: the **[live playground](https://ruvnet.github.io/ai-text-watermark/#playground)** embeds and recovers the provenance payload **`ruvnet`** entirely in your browser (100% recovery on the demo). Capacity trades against robustness — budget ~90 tokens per bit for a clean read, and layer error-correction for editing resilience.
+
+> **Honest boundary:** provenance is applied *at generation*, not stamped onto finished prose. You watermark a token stream your model produces; you never post-hoc mark someone's existing text. The payload carries provenance (a model / author / run tag), never end-user identity. Design: [ADR-386](./docs/adr/ADR-386-multi-bit-secret-message-watermark.md).
+
 ## Use cases
 
 - **EU AI Act / transparency compliance** — mark model output so it's later recognisable as AI-assisted.
