@@ -136,7 +136,7 @@
   #play canvas{ display:block; width:100%; height:auto; border-radius:11px; background:var(--sunken); }
   #play .genlbl{ font-family:var(--mono); font-size:.62rem; letter-spacing:.06em; text-transform:uppercase; color:var(--muted); margin-top:11px; }
   #play .genlbl span{ text-transform:none; letter-spacing:0; opacity:.7; }
-  #play .stream{ font-family:var(--sans); font-size:.86rem; line-height:1.65; max-height:120px; overflow:hidden; color:var(--fg); margin-top:6px; background:var(--sunken); border:1px solid var(--rule); border-radius:10px; padding:11px 13px; -webkit-mask-image:linear-gradient(180deg,#000 66%,transparent); mask-image:linear-gradient(180deg,#000 66%,transparent); }
+  #play .stream{ font-family:var(--sans); font-size:.9rem; line-height:1.65; max-height:200px; overflow-y:auto; color:var(--fg); margin-top:6px; background:var(--sunken); border:1px solid var(--rule); border-radius:10px; padding:12px 14px; -webkit-overflow-scrolling:touch; }
   #play .stream .wm{ background:rgba(79,214,207,.16); color:var(--teal); border-radius:4px; padding:.02em .18em; }
   #play .ids{ font-family:var(--mono); font-size:.6rem; line-height:1.8; max-height:52px; overflow:hidden; color:var(--muted); word-break:break-all; margin-top:6px; -webkit-mask-image:linear-gradient(180deg,#000 54%,transparent); mask-image:linear-gradient(180deg,#000 54%,transparent); }
   #play table{ width:100%; border-collapse:collapse; font-family:var(--mono); font-size:.78rem; }
@@ -732,6 +732,7 @@ init().then(()=>{ $('#boot').remove(); $('#pgApp').hidden=false;
   var offered = false;
   function maybeAutoStart(){
     if(offered) return;
+    if(innerWidth < 760) return; // mobile: don't auto-cover the UI — offer via the banner "Take the tour" button
     var done; try{ done = localStorage.getItem(TOUR_KEY); }catch(e){ done = 'done'; }
     if(done) { offered = true; return; }
     if($('#pgApp') && !$('#pgApp').hidden && $('#play').classList.contains('on')){
