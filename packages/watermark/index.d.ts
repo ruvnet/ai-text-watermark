@@ -41,6 +41,27 @@ export interface ProxyOptions extends WatermarkerOptions {
   topP?: number;
 }
 
+export interface MidStreamOptions extends ProxyOptions {
+  /** Backpressure window: unacked tokens before the throttle signal fires (default 64). */
+  capacity?: number;
+}
+
+/** One inflight step: the watermarked token plus the live analysis after it. */
+export interface StreamEvent {
+  /** The watermarked token id to emit. */
+  token: number;
+  /** Watermark evidence accumulated through this token (z-score). */
+  zScore: number;
+  /** Watermarked positions scored so far. */
+  scored: number;
+  /** log10(p_value) of the current evidence. */
+  log10P: number;
+  /** Was this token novel (vs. a repeated k-gram)? */
+  novel: boolean;
+  /** Is the consumer behind (throttle signal)? */
+  backpressure: boolean;
+}
+
 /** Streaming watermarked sampler. */
 export class Watermarker {
   constructor(opts: WatermarkerOptions);
@@ -63,6 +84,26 @@ export class StreamProxy {
   pushTopK(tokenIds: Uint32Array | number[], logprobs: Float32Array | number[]): number;
   /** Tokens emitted so far. */
   readonly steps: number;
+  /** Release the WASM instance. */
+  free(): void;
+}
+
+/**
+ * MidStream — inflight analysis of a live watermarked stream. Each push
+ * watermarks one token and returns the live watermark confidence in the same pass.
+ */
+export class MidStream {
+  constructor(opts: MidStreamOptions);
+  /** Watermark + analyze one full-vocab-logits step. */
+  pushLogits(logits: Float32Array | number[]): StreamEvent;
+  /** Watermark + analyze one truncated `(tokenIds, logprobs)` step. */
+  pushTopK(tokenIds: Uint32Array | number[], logprobs: Float32Array | number[]): StreamEvent;
+  /** Consumer drained `n` tokens — relieve backpressure. */
+  ack(n: number): void;
+  /** Live watermark evidence (z-score) so far. */
+  readonly zScore: number;
+  /** Fraction of tokens judged novel so far. */
+  readonly noveltyRatio: number;
   /** Release the WASM instance. */
   free(): void;
 }

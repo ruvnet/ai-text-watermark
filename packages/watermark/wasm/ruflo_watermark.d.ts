@@ -15,6 +15,61 @@ export class WasmDetection {
 }
 
 /**
+ * MidStream — inflight analysis of a live watermarked stream, JS-facing.
+ *
+ * Wraps [`MidStream`]: `push_logits` (or `push_topk`) watermarks one token and
+ * analyzes it in the same pass. After each call the getters report the live
+ * watermark confidence (`z_score`), scored positions, novelty, and backpressure —
+ * so a serving loop knows the mark's strength *while* it generates.
+ */
+export class WasmMidStream {
+    free(): void;
+    [Symbol.dispose](): void;
+    /**
+     * Consumer drained `n` tokens — relieve backpressure.
+     */
+    ack(n: number): void;
+    /**
+     * Same shaping args as `WasmStreamProxy`, plus `capacity` = the backpressure
+     * window (unacked tokens before the throttle signal fires).
+     */
+    constructor(key_material: Uint8Array, context_width: number, layers: number, scheme: string, temperature: number, top_k: number, top_p: number, capacity: number);
+    /**
+     * Watermark + analyze one full-vocab-logits step. Returns the token id;
+     * read `z_score` / `scored` / `novel` / `backpressure` for the live analysis.
+     */
+    push_logits(logits: Float32Array): number;
+    /**
+     * Watermark + analyze one truncated `(ids, logprobs)` step.
+     */
+    push_topk(token_ids: Uint32Array, logprobs: Float32Array): number;
+    /**
+     * Is the consumer behind (throttle signal)?
+     */
+    readonly backpressure: boolean;
+    /**
+     * Was the most recent token novel?
+     */
+    readonly last_novel: boolean;
+    /**
+     * `log10(p_value)` of the current evidence.
+     */
+    readonly log10_p: number;
+    /**
+     * Fraction of tokens judged novel (low ⇒ repetitive ⇒ weak mark).
+     */
+    readonly novelty_ratio: number;
+    /**
+     * Watermarked positions scored so far.
+     */
+    readonly scored: number;
+    /**
+     * Live watermark evidence over the stream so far.
+     */
+    readonly z_score: number;
+}
+
+/**
  * Ultra-low-latency streaming watermark **proxy**, JS-facing.
  *
  * Wraps [`StreamProxy`]: feed it a decode step's **logits** (or a truncated

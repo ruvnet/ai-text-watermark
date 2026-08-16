@@ -108,6 +108,50 @@ class StreamProxy {
   }
 }
 
+/**
+ * MidStream — **inflight analysis** of a live watermarked stream. Each
+ * `pushLogits`/`pushTopK` watermarks one token AND analyzes it in the same pass,
+ * returning `{ token, zScore, scored, log10P, novel, backpressure }` so a serving
+ * loop knows the watermark's strength *while* it generates. Same statistic as
+ * `detect`, computed online.
+ */
+class MidStream {
+  /**
+   * @param {object} opts  ProxyOptions plus:
+   * @param {number} [opts.capacity=64]  backpressure window (unacked tokens before the throttle signal)
+   */
+  constructor({ key, scheme = 'gumbel', contextWidth = 4, layers = 6, temperature = 1.0, topK = 0, topP = 1.0, capacity = 64 } = {}) {
+    this._inner = new wasm.WasmMidStream(toKeyBytes(key), contextWidth, layers, normScheme(scheme), temperature, topK >>> 0, topP, capacity >>> 0);
+  }
+  _event(token) {
+    return { token, zScore: this._inner.z_score, scored: this._inner.scored, log10P: this._inner.log10_p, novel: this._inner.last_novel, backpressure: this._inner.backpressure };
+  }
+  /** Watermark + analyze one full-vocab-logits step. Returns the inflight event. */
+  pushLogits(logits) {
+    return this._event(this._inner.push_logits(toF32(logits)));
+  }
+  /** Watermark + analyze one truncated `(tokenIds, logprobs)` step. */
+  pushTopK(tokenIds, logprobs) {
+    return this._event(this._inner.push_topk(toU32(tokenIds), toF32(logprobs)));
+  }
+  /** Consumer drained `n` tokens — relieve backpressure. */
+  ack(n) {
+    this._inner.ack(n >>> 0);
+  }
+  /** Live watermark evidence (z-score) over the stream so far. */
+  get zScore() {
+    return this._inner.z_score;
+  }
+  /** Fraction of tokens judged novel so far (low ⇒ repetitive ⇒ weak mark). */
+  get noveltyRatio() {
+    return this._inner.novelty_ratio;
+  }
+  /** Release the WASM instance. */
+  free() {
+    this._inner.free();
+  }
+}
+
 /** Detect a watermark over an emitted token-id sequence using the named scheme. */
 function detect(tokens, { key, scheme = 'gumbel', contextWidth = 4, layers = 6 } = {}) {
   return shape(wasm.detect(toU32(tokens), toKeyBytes(key), contextWidth, layers, normScheme(scheme)));
@@ -123,4 +167,4 @@ function detectExact(tokens, { key, contextWidth = 4 } = {}) {
   return shape(wasm.detect_exact(toU32(tokens), toKeyBytes(key), contextWidth));
 }
 
-module.exports = { Watermarker, StreamProxy, detect, detectSelfSync, detectExact, SCHEMES };
+module.exports = { Watermarker, StreamProxy, MidStream, detect, detectSelfSync, detectExact, SCHEMES };

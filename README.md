@@ -116,6 +116,32 @@ Same class in Rust (`ruflo_watermark::StreamProxy`) and in the browser
 front-end, not a new scheme — a proxy stream detects identically to a
 `Watermarker` stream.
 
+## Inflight analysis — MidStream
+
+`MidStream` fuses generation and detection into one streaming pass: each token is
+watermarked **and** analyzed, so you know the watermark's strength *while the text
+is still generating* — no second detection scan. It's the online form of the same
+statistic (the live z-score converges exactly to a batch `detect`), plus
+redundancy and backpressure signals for a serving loop.
+
+```js
+const { MidStream, detect } = require('@claude-flow/watermark');
+
+const ms = new MidStream({ key: 'my-secret', scheme: 'gumbel', capacity: 64 });
+for (const logits of decodeSteps) {
+  const ev = ms.pushLogits(logits);   // { token, zScore, scored, log10P, novel, backpressure }
+  emit(ev.token);
+  if (ev.backpressure) throttle();     // consumer is behind
+  if (ev.zScore > 6) markProvenanceConfirmed();  // enough watermark signal, live
+  ms.ack(1);                           // consumer drained one
+}
+```
+
+Inspired by [`ruvnet/midstream`](https://github.com/ruvnet/midstream) ("real-time
+LLM streaming with inflight analysis"); the WASM-safe analysis primitives are
+reimplemented in-core (design: [ADR-389](./docs/adr/ADR-389-midstream-inflight-analysis.md)),
+while real QUIC transport belongs in the gateway tier ([ADR-387](./docs/adr/ADR-387-metallm-watermarking-service.md)).
+
 ## How it works (60 seconds)
 
 A model writes one word at a time, and at most steps **several next words are equally good** ("cold and **overcast** / **grey**"). Normally a tie is broken by a private dice roll. Watermarking keeps the odds identical but changes the *source of that randomness*: a **secret key + the preceding words** decide the winner — like playing a game with the digits of π instead of dice. Later, anyone with the key re-walks the text and checks how often it matched what the key would have chosen. Enough matches, and coincidence is ruled out.
@@ -179,6 +205,8 @@ This project dogfoods it: the **[live playground](https://ruvnet.github.io/ai-te
 - [ADR-385 — Ultra-low-latency streaming watermark proxy (`StreamProxy`)](./docs/adr/ADR-385-ultra-low-latency-streaming-proxy.md)
 - [ADR-386 — Multi-bit secret-message watermarking (per-block key derivation)](./docs/adr/ADR-386-multi-bit-secret-message-watermark.md)
 - [ADR-387 — Watermarking as a Cognitum service in meta-llm / meta-proxy](./docs/adr/ADR-387-metallm-watermarking-service.md)
+- [ADR-388 — Cognitum-OAuth-gated gateway-backed watermarked generation](./docs/adr/ADR-388-oauth-gated-gateway-watermarked-generation.md)
+- [ADR-389 — MidStream: inflight analysis of a live watermarked stream](./docs/adr/ADR-389-midstream-inflight-analysis.md)
 
 ## Method & prior art
 

@@ -10,6 +10,7 @@
 import initWasm, {
   WasmWatermarker,
   WasmStreamProxy,
+  WasmMidStream,
   detect as _detect,
   detect_selfsync as _detectSelfSync,
   detect_exact as _detectExact,
@@ -86,6 +87,35 @@ export class StreamProxy {
   }
   get steps() {
     return this._inner.steps;
+  }
+  free() {
+    this._inner.free();
+  }
+}
+
+/** MidStream — inflight analysis of a live watermarked stream (call `await init()` first). */
+export class MidStream {
+  constructor({ key, scheme = 'gumbel', contextWidth = 4, layers = 6, temperature = 1.0, topK = 0, topP = 1.0, capacity = 64 } = {}) {
+    assertReady();
+    this._inner = new WasmMidStream(toKeyBytes(key), contextWidth, layers, normScheme(scheme), temperature, topK >>> 0, topP, capacity >>> 0);
+  }
+  _event(token) {
+    return { token, zScore: this._inner.z_score, scored: this._inner.scored, log10P: this._inner.log10_p, novel: this._inner.last_novel, backpressure: this._inner.backpressure };
+  }
+  pushLogits(logits) {
+    return this._event(this._inner.push_logits(toF32(logits)));
+  }
+  pushTopK(tokenIds, logprobs) {
+    return this._event(this._inner.push_topk(toU32(tokenIds), toF32(logprobs)));
+  }
+  ack(n) {
+    this._inner.ack(n >>> 0);
+  }
+  get zScore() {
+    return this._inner.z_score;
+  }
+  get noveltyRatio() {
+    return this._inner.novelty_ratio;
   }
   free() {
     this._inner.free();

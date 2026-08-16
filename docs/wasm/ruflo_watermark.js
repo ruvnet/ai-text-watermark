@@ -52,6 +52,131 @@ export class WasmDetection {
 if (Symbol.dispose) WasmDetection.prototype[Symbol.dispose] = WasmDetection.prototype.free;
 
 /**
+ * MidStream — inflight analysis of a live watermarked stream, JS-facing.
+ *
+ * Wraps [`MidStream`]: `push_logits` (or `push_topk`) watermarks one token and
+ * analyzes it in the same pass. After each call the getters report the live
+ * watermark confidence (`z_score`), scored positions, novelty, and backpressure —
+ * so a serving loop knows the mark's strength *while* it generates.
+ */
+export class WasmMidStream {
+    __destroy_into_raw() {
+        const ptr = this.__wbg_ptr;
+        this.__wbg_ptr = 0;
+        WasmMidStreamFinalization.unregister(this);
+        return ptr;
+    }
+    free() {
+        const ptr = this.__destroy_into_raw();
+        wasm.__wbg_wasmmidstream_free(ptr, 0);
+    }
+    /**
+     * Consumer drained `n` tokens — relieve backpressure.
+     * @param {number} n
+     */
+    ack(n) {
+        wasm.wasmmidstream_ack(this.__wbg_ptr, n);
+    }
+    /**
+     * Is the consumer behind (throttle signal)?
+     * @returns {boolean}
+     */
+    get backpressure() {
+        const ret = wasm.wasmmidstream_backpressure(this.__wbg_ptr);
+        return ret !== 0;
+    }
+    /**
+     * Was the most recent token novel?
+     * @returns {boolean}
+     */
+    get last_novel() {
+        const ret = wasm.wasmmidstream_last_novel(this.__wbg_ptr);
+        return ret !== 0;
+    }
+    /**
+     * `log10(p_value)` of the current evidence.
+     * @returns {number}
+     */
+    get log10_p() {
+        const ret = wasm.wasmmidstream_log10_p(this.__wbg_ptr);
+        return ret;
+    }
+    /**
+     * Same shaping args as `WasmStreamProxy`, plus `capacity` = the backpressure
+     * window (unacked tokens before the throttle signal fires).
+     * @param {Uint8Array} key_material
+     * @param {number} context_width
+     * @param {number} layers
+     * @param {string} scheme
+     * @param {number} temperature
+     * @param {number} top_k
+     * @param {number} top_p
+     * @param {number} capacity
+     */
+    constructor(key_material, context_width, layers, scheme, temperature, top_k, top_p, capacity) {
+        const ptr0 = passArray8ToWasm0(key_material, wasm.__wbindgen_malloc);
+        const len0 = WASM_VECTOR_LEN;
+        const ptr1 = passStringToWasm0(scheme, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
+        const len1 = WASM_VECTOR_LEN;
+        const ret = wasm.wasmmidstream_new(ptr0, len0, context_width, layers, ptr1, len1, temperature, top_k, top_p, capacity);
+        this.__wbg_ptr = ret;
+        WasmMidStreamFinalization.register(this, this.__wbg_ptr, this);
+        return this;
+    }
+    /**
+     * Fraction of tokens judged novel (low ⇒ repetitive ⇒ weak mark).
+     * @returns {number}
+     */
+    get novelty_ratio() {
+        const ret = wasm.wasmmidstream_novelty_ratio(this.__wbg_ptr);
+        return ret;
+    }
+    /**
+     * Watermark + analyze one full-vocab-logits step. Returns the token id;
+     * read `z_score` / `scored` / `novel` / `backpressure` for the live analysis.
+     * @param {Float32Array} logits
+     * @returns {number}
+     */
+    push_logits(logits) {
+        const ptr0 = passArrayF32ToWasm0(logits, wasm.__wbindgen_malloc);
+        const len0 = WASM_VECTOR_LEN;
+        const ret = wasm.wasmmidstream_push_logits(this.__wbg_ptr, ptr0, len0);
+        return ret >>> 0;
+    }
+    /**
+     * Watermark + analyze one truncated `(ids, logprobs)` step.
+     * @param {Uint32Array} token_ids
+     * @param {Float32Array} logprobs
+     * @returns {number}
+     */
+    push_topk(token_ids, logprobs) {
+        const ptr0 = passArray32ToWasm0(token_ids, wasm.__wbindgen_malloc);
+        const len0 = WASM_VECTOR_LEN;
+        const ptr1 = passArrayF32ToWasm0(logprobs, wasm.__wbindgen_malloc);
+        const len1 = WASM_VECTOR_LEN;
+        const ret = wasm.wasmmidstream_push_topk(this.__wbg_ptr, ptr0, len0, ptr1, len1);
+        return ret >>> 0;
+    }
+    /**
+     * Watermarked positions scored so far.
+     * @returns {number}
+     */
+    get scored() {
+        const ret = wasm.wasmmidstream_scored(this.__wbg_ptr);
+        return ret >>> 0;
+    }
+    /**
+     * Live watermark evidence over the stream so far.
+     * @returns {number}
+     */
+    get z_score() {
+        const ret = wasm.wasmmidstream_z_score(this.__wbg_ptr);
+        return ret;
+    }
+}
+if (Symbol.dispose) WasmMidStream.prototype[Symbol.dispose] = WasmMidStream.prototype.free;
+
+/**
  * Ultra-low-latency streaming watermark **proxy**, JS-facing.
  *
  * Wraps [`StreamProxy`]: feed it a decode step's **logits** (or a truncated
@@ -260,6 +385,9 @@ function __wbg_get_imports() {
 const WasmDetectionFinalization = (typeof FinalizationRegistry === 'undefined')
     ? { register: () => {}, unregister: () => {} }
     : new FinalizationRegistry(ptr => wasm.__wbg_wasmdetection_free(ptr, 1));
+const WasmMidStreamFinalization = (typeof FinalizationRegistry === 'undefined')
+    ? { register: () => {}, unregister: () => {} }
+    : new FinalizationRegistry(ptr => wasm.__wbg_wasmmidstream_free(ptr, 1));
 const WasmStreamProxyFinalization = (typeof FinalizationRegistry === 'undefined')
     ? { register: () => {}, unregister: () => {} }
     : new FinalizationRegistry(ptr => wasm.__wbg_wasmstreamproxy_free(ptr, 1));

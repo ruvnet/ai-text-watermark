@@ -15,6 +15,61 @@ export class WasmDetection {
 }
 
 /**
+ * MidStream — inflight analysis of a live watermarked stream, JS-facing.
+ *
+ * Wraps [`MidStream`]: `push_logits` (or `push_topk`) watermarks one token and
+ * analyzes it in the same pass. After each call the getters report the live
+ * watermark confidence (`z_score`), scored positions, novelty, and backpressure —
+ * so a serving loop knows the mark's strength *while* it generates.
+ */
+export class WasmMidStream {
+    free(): void;
+    [Symbol.dispose](): void;
+    /**
+     * Consumer drained `n` tokens — relieve backpressure.
+     */
+    ack(n: number): void;
+    /**
+     * Same shaping args as `WasmStreamProxy`, plus `capacity` = the backpressure
+     * window (unacked tokens before the throttle signal fires).
+     */
+    constructor(key_material: Uint8Array, context_width: number, layers: number, scheme: string, temperature: number, top_k: number, top_p: number, capacity: number);
+    /**
+     * Watermark + analyze one full-vocab-logits step. Returns the token id;
+     * read `z_score` / `scored` / `novel` / `backpressure` for the live analysis.
+     */
+    push_logits(logits: Float32Array): number;
+    /**
+     * Watermark + analyze one truncated `(ids, logprobs)` step.
+     */
+    push_topk(token_ids: Uint32Array, logprobs: Float32Array): number;
+    /**
+     * Is the consumer behind (throttle signal)?
+     */
+    readonly backpressure: boolean;
+    /**
+     * Was the most recent token novel?
+     */
+    readonly last_novel: boolean;
+    /**
+     * `log10(p_value)` of the current evidence.
+     */
+    readonly log10_p: number;
+    /**
+     * Fraction of tokens judged novel (low ⇒ repetitive ⇒ weak mark).
+     */
+    readonly novelty_ratio: number;
+    /**
+     * Watermarked positions scored so far.
+     */
+    readonly scored: number;
+    /**
+     * Live watermark evidence over the stream so far.
+     */
+    readonly z_score: number;
+}
+
+/**
  * Ultra-low-latency streaming watermark **proxy**, JS-facing.
  *
  * Wraps [`StreamProxy`]: feed it a decode step's **logits** (or a truncated
@@ -89,6 +144,7 @@ export type InitInput = RequestInfo | URL | Response | BufferSource | WebAssembl
 export interface InitOutput {
     readonly memory: WebAssembly.Memory;
     readonly __wbg_wasmdetection_free: (a: number, b: number) => void;
+    readonly __wbg_wasmmidstream_free: (a: number, b: number) => void;
     readonly __wbg_wasmstreamproxy_free: (a: number, b: number) => void;
     readonly __wbg_wasmwatermarker_free: (a: number, b: number) => void;
     readonly detect: (a: number, b: number, c: number, d: number, e: number, f: number, g: number, h: number) => number;
@@ -98,6 +154,16 @@ export interface InitOutput {
     readonly wasmdetection_p_value: (a: number) => number;
     readonly wasmdetection_scored_positions: (a: number) => number;
     readonly wasmdetection_z_score: (a: number) => number;
+    readonly wasmmidstream_ack: (a: number, b: number) => void;
+    readonly wasmmidstream_backpressure: (a: number) => number;
+    readonly wasmmidstream_last_novel: (a: number) => number;
+    readonly wasmmidstream_log10_p: (a: number) => number;
+    readonly wasmmidstream_new: (a: number, b: number, c: number, d: number, e: number, f: number, g: number, h: number, i: number, j: number) => number;
+    readonly wasmmidstream_novelty_ratio: (a: number) => number;
+    readonly wasmmidstream_push_logits: (a: number, b: number, c: number) => number;
+    readonly wasmmidstream_push_topk: (a: number, b: number, c: number, d: number, e: number) => number;
+    readonly wasmmidstream_scored: (a: number) => number;
+    readonly wasmmidstream_z_score: (a: number) => number;
     readonly wasmstreamproxy_new: (a: number, b: number, c: number, d: number, e: number, f: number, g: number, h: number, i: number) => number;
     readonly wasmstreamproxy_push_logits: (a: number, b: number, c: number) => number;
     readonly wasmstreamproxy_push_topk: (a: number, b: number, c: number, d: number, e: number) => number;

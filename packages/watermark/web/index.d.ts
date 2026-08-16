@@ -1,7 +1,7 @@
 // Types for @claude-flow/watermark/web (browser / Deno / bundler entry).
-import type { Detection, Scheme, WatermarkerOptions, SelfSyncOptions, ProxyOptions } from '../index.d.ts';
+import type { Detection, Scheme, WatermarkerOptions, SelfSyncOptions, ProxyOptions, MidStreamOptions, StreamEvent } from '../index.d.ts';
 
-export type { Detection, Scheme, WatermarkerOptions, SelfSyncOptions, ProxyOptions };
+export type { Detection, Scheme, WatermarkerOptions, SelfSyncOptions, ProxyOptions, MidStreamOptions, StreamEvent };
 
 /** WASM init input: fetched URL/Response, raw bytes, or a compiled module. */
 export type InitInput = RequestInfo | URL | Response | BufferSource | WebAssembly.Module;
@@ -23,6 +23,16 @@ export class StreamProxy {
   pushLogits(logits: Float32Array | number[]): number;
   pushTopK(tokenIds: Uint32Array | number[], logprobs: Float32Array | number[]): number;
   readonly steps: number;
+  free(): void;
+}
+
+export class MidStream {
+  constructor(opts: MidStreamOptions);
+  pushLogits(logits: Float32Array | number[]): StreamEvent;
+  pushTopK(tokenIds: Uint32Array | number[], logprobs: Float32Array | number[]): StreamEvent;
+  ack(n: number): void;
+  readonly zScore: number;
+  readonly noveltyRatio: number;
   free(): void;
 }
 
