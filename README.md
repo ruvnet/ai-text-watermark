@@ -37,6 +37,8 @@ You can't stamp a logo on a sentence. AI text watermarking hides an **invisible,
 
 ```bash
 npm install @claude-flow/watermark
+# or the standalone name (thin wrapper, same API):
+npm install ai-text-watermark
 ```
 
 **Rust (crates.io):**
