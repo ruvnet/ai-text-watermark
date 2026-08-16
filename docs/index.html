@@ -384,6 +384,17 @@
       </section>
 
       <section class="card">
+        <h2>📡 Inflight analysis <span style="color:var(--muted);font-weight:400;text-transform:none;letter-spacing:0">· MidStream</span></h2>
+        <p class="note" style="margin-top:0;margin-bottom:10px">The same detector, run <em>online</em> — one token at a time, as the text generates. The curve is the live watermark confidence; you know the mark is there long before the text ends.</p>
+        <div class="metrics" style="margin-bottom:12px">
+          <div><div class="mk">live z (final)</div><div class="mv" id="ifZ">—</div></div>
+          <div><div class="mk">detected at token</div><div class="mv" id="ifAt">—</div></div>
+        </div>
+        <figure style="margin:0"><canvas id="inflightCv" width="640" height="220"></canvas></figure>
+        <div class="note" id="ifNote">Watermark confidence accumulating token-by-token, in one streaming pass.</div>
+      </section>
+
+      <section class="card">
         <h2>🕵 Secret message <span style="color:var(--muted);font-weight:400;text-transform:none;letter-spacing:0">· multi-bit provenance</span></h2>
         <p class="note" style="margin-top:0;margin-bottom:12px">Hide a short <b>provenance</b> payload <em>inside</em> the watermark. Each bit is carried by which of two key-derived streams marks a block of tokens — so the same text, read with the key, spells out your message. This project's own demo payload is <b>ruvnet</b>: embed it, then watch it come back bit-for-bit.</p>
         <div class="f"><label>message <b id="capEcho">6 chars</b></label><input type="text" id="msg" value="ruvnet" maxlength="8" spellcheck="false"></div>
@@ -554,7 +565,7 @@ cargo add ruflo-watermark</pre>
 
 <script type="module">
 /* PLAYGROUND (real WASM) + secret message */
-import init, { WasmWatermarker, detect, detect_selfsync, detect_exact } from './wasm/ruflo_watermark.js';
+import init, { WasmWatermarker, WasmMidStream, detect, detect_selfsync, detect_exact } from './wasm/ruflo_watermark.js';
 const $=s=>document.querySelector(s), enc=new TextEncoder(), css=v=>getComputedStyle(document.documentElement).getPropertyValue(v).trim();
 const state={scheme:'gumbel',entropy:'high',gen:null,robustPts:[]};
 function seg(id,key,echo,fmt){ const b=$('#'+id); b.addEventListener('click',e=>{ const t=e.target.closest('button'); if(!t)return; [...b.children].forEach(x=>x.setAttribute('aria-pressed',x===t)); state[key]=t.dataset.v; if(echo)$(echo).textContent=fmt?fmt(t.dataset.v):t.dataset.v; }); }
@@ -565,7 +576,7 @@ $('#key').addEventListener('input',e=>$('#keyEcho').textContent=e.target.value||
 bind('alpha','#aEcho',v=>'1e-'+v); $('#alpha').addEventListener('input',()=>{ if(state.gen)renderDetection(); });
 bind('edit','#editEcho',v=>v+'%'); $('#edit').addEventListener('input',()=>{ if(state.gen)runRobust(); });
 $('#msg').addEventListener('input',e=>$('#capEcho').textContent=(e.target.value.length||0)+' chars');
-addEventListener('themechange',()=>{ if(state.gen)drawRobust(); }); addEventListener('showplay',()=>{ if(state.gen)drawRobust(); });
+addEventListener('themechange',()=>{ if(state.gen){drawRobust();drawInflight();} }); addEventListener('showplay',()=>{ if(state.gen){drawRobust();drawInflight();} });
 function distribution(V,e){ const p=new Float32Array(V); let s=0; for(let i=0;i<V;i++){ let w=e==='high'?1:e==='mixed'?1/Math.pow(i+1,.7):1/Math.pow(i+1,1.9); p[i]=w; s+=w; } for(let i=0;i<V;i++)p[i]/=s; return p; }
 /* A synthetic lexicon so the token stream reads as words. Token ids are what the
    watermark and detector actually operate on; this is a display-only decoding. */
@@ -594,7 +605,22 @@ function fmtP(lp){ return !isFinite(lp)?'−∞':lp<-1000?lp.toFixed(0):lp.toFix
 function renderDetection(){ const g=state.gen,d=detectAll(g.out,g.ctx,g.lay),a=alpha(); const rows=[['standard',d.standard],['self-sync',d.selfsync],['exact (short)',d.exact],['wrong key',d.wrongkey]];
   $('#detRows').innerHTML=rows.map(([n,r])=>{ const yes=r.lp<=a,wrong=n==='wrong key',col=((wrong?!yes:yes)?css('--teal'):css('--muted')); return `<tr><td>${n}</td><td style="font-weight:700;color:${col}">${r.z.toFixed(1)}</td><td>${fmtP(r.lp)}</td><td style="color:${col}">${yes?'yes':'no'}</td></tr>`; }).join('');
   const yes=d.standard.lp<=a; $('#vDot').style.color=yes?css('--teal'):css('--muted'); $('#vTxt').style.color=yes?css('--teal'):css('--muted'); $('#vTxt').firstChild.textContent=yes?'Watermarked':'Not detected'; $('#vSub').textContent=`z = ${d.standard.z.toFixed(1)} · log₁₀p ${fmtP(d.standard.lp)} · ${d.standard.sp} keyed positions · α = 1e-${$('#alpha').value}`; $('#mKeyed').textContent=d.standard.sp.toLocaleString(); }
-function render(){ const g=state.gen; $('#mScheme').textContent=state.scheme.replace('tournament_nd','nd'); $('#mThru').textContent=Math.round(g.N/(g.dt/1000)).toLocaleString()+'/s'; $('#mTime').textContent=g.dt.toFixed(1)+' ms'; $('#stream').textContent=asText(g.out,110); $('#streamIds').textContent=Array.from(g.out.slice(0,300)).join(' '); $('#genNote').textContent=`${g.N} tokens · vocab ${g.V} · ${state.entropy}-entropy. `+(state.entropy==='low'?'Low entropy ⇒ a faint mark, as expected.':'Plenty of low-stakes choices for the mark.'); renderDetection(); runRobust(); }
+function render(){ const g=state.gen; $('#mScheme').textContent=state.scheme.replace('tournament_nd','nd'); $('#mThru').textContent=Math.round(g.N/(g.dt/1000)).toLocaleString()+'/s'; $('#mTime').textContent=g.dt.toFixed(1)+' ms'; $('#stream').textContent=asText(g.out,110); $('#streamIds').textContent=Array.from(g.out.slice(0,300)).join(' '); $('#genNote').textContent=`${g.N} tokens · vocab ${g.V} · ${state.entropy}-entropy. `+(state.entropy==='low'?'Low entropy ⇒ a faint mark, as expected.':'Plenty of low-stakes choices for the mark.'); renderDetection(); runRobust(); runInflight(); }
+function runInflight(){ const g=state.gen,V=g.V,probs=distribution(V,state.entropy);
+  const logits=new Float32Array(V); for(let i=0;i<V;i++) logits[i]=Math.log(Math.max(probs[i],1e-9));
+  const ms=new WasmMidStream(keyBytes(),g.ctx,g.lay,state.scheme,1.0,0,1.0,0x3fffffff);
+  const N=Math.min(g.N,600),zs=new Float32Array(N); let detAt=-1;
+  for(let i=0;i<N;i++){ ms.push_logits(logits); zs[i]=ms.z_score; if(detAt<0 && zs[i]>=6) detAt=i+1; }
+  const finalZ=ms.z_score,nov=ms.novelty_ratio; ms.free();
+  state.inflight={zs,detAt,N};
+  $('#ifZ').textContent=finalZ.toFixed(1); $('#ifAt').textContent=detAt>0?detAt:'—';
+  $('#ifNote').textContent=detAt>0?`crossed the confident bar (z ≥ 6, ~1-in-a-billion) at token ${detAt} of ${N} — the mark is provable mid-stream, no second pass.`:`stayed below z ≥ 6 in ${N} tokens (low entropy or short — the mark needs length).`;
+  drawInflight(); }
+function drawInflight(){ const cv=$('#inflightCv'); if(!state.inflight)return; const ratio=devicePixelRatio||1,w=cv.clientWidth||600,h=220; cv.width=w*ratio; cv.height=h*ratio; const x=cv.getContext('2d'); x.setTransform(ratio,0,0,ratio,0,0); const muted=css('--muted'),sig=css('--teal'),rule=css('--rule'),gold=css('--gold'); x.clearRect(0,0,w,h); const {zs,detAt,N}=state.inflight; const pad=34,x0=pad,x1=w-14,y0=h-24,y1=16; let maxZ=8; for(let i=0;i<N;i++) if(zs[i]>maxZ)maxZ=zs[i]; maxZ*=1.08;
+  x.strokeStyle=rule; x.lineWidth=1; x.beginPath(); x.moveTo(x0,y0);x.lineTo(x1,y0);x.moveTo(x0,y0);x.lineTo(x0,y1); x.stroke(); x.fillStyle=muted; x.font='10px '+css('--mono'); x.fillText('z',x0-6,y1+4); x.textAlign='right'; x.fillText('tokens →',x1,y0+15); x.textAlign='left';
+  const thY=y0-(6/maxZ)*(y0-y1); x.strokeStyle='rgba(230,180,90,.5)'; x.setLineDash([4,4]); x.beginPath(); x.moveTo(x0,thY);x.lineTo(x1,thY); x.stroke(); x.setLineDash([]); x.fillStyle=gold; x.fillText('confident (z ≥ 6)',x0+4,thY-4);
+  x.strokeStyle=sig; x.lineWidth=2; x.shadowColor=sig; x.shadowBlur=8; x.beginPath(); for(let i=0;i<N;i++){ const px=x0+(N>1?i/(N-1):0)*(x1-x0),py=y0-Math.min(1,Math.max(0,zs[i]/maxZ))*(y0-y1); i?x.lineTo(px,py):x.moveTo(px,py); } x.stroke(); x.shadowBlur=0;
+  if(detAt>0){ const px=x0+((detAt-1)/(N-1))*(x1-x0),py=y0-Math.min(1,zs[detAt-1]/maxZ)*(y0-y1); x.strokeStyle=sig; x.globalAlpha=.6; x.setLineDash([3,3]); x.beginPath(); x.moveTo(px,y0);x.lineTo(px,py);x.stroke(); x.setLineDash([]); x.globalAlpha=1; x.fillStyle=sig; x.beginPath();x.arc(px,py,3.5,0,7);x.fill(); x.fillText('detected @'+detAt,px+6,py-4); } }
 function attack(tokens,V,rate){ const out=Uint32Array.from(tokens); let s=12345; for(let i=0;i<out.length;i++){ s=(s*1103515245+12345)&0x7fffffff; if((s%1000)/1000<rate){ s=(s*1103515245+12345)&0x7fffffff; out[i]=s%V; } } return out; }
 function runRobust(){ const g=state.gen,rate=+$('#edit').value/100,atk=attack(g.out,g.V,rate),r=detect(atk,keyBytes(),g.ctx,g.lay,state.scheme),z=r.z_score; r.free(); state.robustPts=state.robustPts.filter(p=>p.rate!==rate); state.robustPts.push({rate,z}); state.robustPts.sort((a,b)=>a.rate-b.rate); $('#robNote').textContent=`at ${$('#edit').value}% edited: z = ${z.toFixed(1)} — ${z>6?'still unmistakable':z>3?'weakening but visible':'lost in the noise'}`; drawRobust(); }
 function drawRobust(){ const cv=$('#robustCv'),ratio=devicePixelRatio||1,w=cv.clientWidth||600,h=220; cv.width=w*ratio; cv.height=h*ratio; const x=cv.getContext('2d'); x.setTransform(ratio,0,0,ratio,0,0); const muted=css('--muted'),sig=css('--teal'),rule=css('--rule'); x.clearRect(0,0,w,h); const pad=32,x0=pad,x1=w-14,y0=h-24,y1=16,maxZ=Math.max(20,...state.robustPts.map(p=>p.z));
@@ -653,8 +679,9 @@ init().then(()=>{ $('#boot').remove(); $('#pgApp').hidden=false;
     { sel:'#pgApp > .card', title:'Configuration', body:'Set the secret key, scheme, and text “entropy”. More entropy and more length make a stronger, easier-to-detect mark. Every change re-runs live.' },
     { sel:'.rescol > .card:nth-of-type(1)', title:'Generation', body:'The watermarked output as readable text (decoded from a synthetic vocabulary), plus the raw token ids the watermark and detector actually operate on — and how many positions carried the mark.' },
     { sel:'.rescol > .card:nth-of-type(2)', title:'Detection', body:'Four detectors read the same text. Watch the wrong-key row sit at ~0 — that is the mark being key-specific. Slide α to set your alarm threshold.' },
-    { sel:'.rescol > .card:nth-of-type(3)', title:'Secret message', body:'Hide a short payload inside the mark. Type a message and hit Embed & extract — it comes back bit-for-bit, spelled out by the key.' },
-    { sel:'.rescol > .card:nth-of-type(4)', title:'Robustness', body:'Drag the edit slider to corrupt the text, and watch detection confidence hold, then fade past the floor. This is how the mark survives editing.' },
+    { sel:'.rescol > .card:nth-of-type(3)', title:'Inflight analysis', body:'The same detector run online, token by token. The curve is the live watermark confidence — you know the mark is there mid-stream, before the text even ends.' },
+    { sel:'.rescol > .card:nth-of-type(4)', title:'Secret message', body:'Hide a short payload inside the mark. Type a message and hit Embed & extract — it comes back bit-for-bit, spelled out by the key.' },
+    { sel:'.rescol > .card:nth-of-type(5)', title:'Robustness', body:'Drag the edit slider to corrupt the text, and watch detection confidence hold, then fade past the floor. This is how the mark survives editing.' },
     { sel:'#help', title:'Docs & install', body:'That’s the tour. Install, the full API, and the ultra-low-latency proxy all live in Docs — open it any time with the “?” button.' },
   ];
   var coach = $('#coach'), ring = $('#coachRing'), card = $('#coachCard'),
