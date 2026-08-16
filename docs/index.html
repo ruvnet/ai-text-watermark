@@ -133,7 +133,11 @@
   #play .verdict .txt{ font-family:var(--grot); font-weight:700; font-size:1.4rem; }
   #play .verdict small{ display:block; font-family:var(--mono); font-size:.68rem; color:var(--muted); font-weight:400; margin-top:3px; }
   #play canvas{ display:block; width:100%; height:auto; border-radius:11px; background:var(--sunken); }
-  #play .stream{ font-family:var(--mono); font-size:.6rem; line-height:1.85; max-height:82px; overflow:hidden; color:var(--muted); word-break:break-all; margin-top:11px; -webkit-mask-image:linear-gradient(180deg,#000 52%,transparent); mask-image:linear-gradient(180deg,#000 52%,transparent); }
+  #play .genlbl{ font-family:var(--mono); font-size:.62rem; letter-spacing:.06em; text-transform:uppercase; color:var(--muted); margin-top:11px; }
+  #play .genlbl span{ text-transform:none; letter-spacing:0; opacity:.7; }
+  #play .stream{ font-family:var(--sans); font-size:.86rem; line-height:1.65; max-height:120px; overflow:hidden; color:var(--fg); margin-top:6px; background:var(--sunken); border:1px solid var(--rule); border-radius:10px; padding:11px 13px; -webkit-mask-image:linear-gradient(180deg,#000 66%,transparent); mask-image:linear-gradient(180deg,#000 66%,transparent); }
+  #play .stream .wm{ background:rgba(79,214,207,.16); color:var(--teal); border-radius:4px; padding:.02em .18em; }
+  #play .ids{ font-family:var(--mono); font-size:.6rem; line-height:1.8; max-height:52px; overflow:hidden; color:var(--muted); word-break:break-all; margin-top:6px; -webkit-mask-image:linear-gradient(180deg,#000 54%,transparent); mask-image:linear-gradient(180deg,#000 54%,transparent); }
   #play table{ width:100%; border-collapse:collapse; font-family:var(--mono); font-size:.78rem; }
   #play th,#play td{ text-align:left; padding:9px 6px; border-bottom:1px solid var(--rule); }
   #play th{ color:var(--muted); font-weight:500; font-size:.64rem; letter-spacing:.05em; text-transform:uppercase; }
@@ -363,7 +367,10 @@
           <div><div class="mk">throughput</div><div class="mv" id="mThru">—</div></div>
           <div><div class="mk">gen time</div><div class="mv" id="mTime">—</div></div>
         </div>
+        <div class="genlbl">generated text <span>· synthetic vocabulary, decoded from the token stream</span></div>
         <div class="stream" id="stream"></div>
+        <div class="genlbl" style="margin-top:12px">token ids <span>· what the watermark & detector actually see</span></div>
+        <div class="ids" id="streamIds"></div>
         <div class="note" id="genNote">Configure and hit generate. More entropy + more length ⇒ a stronger mark.</div>
       </section>
 
@@ -559,6 +566,24 @@ bind('edit','#editEcho',v=>v+'%'); $('#edit').addEventListener('input',()=>{ if(
 $('#msg').addEventListener('input',e=>$('#capEcho').textContent=(e.target.value.length||0)+' chars');
 addEventListener('themechange',()=>{ if(state.gen)drawRobust(); }); addEventListener('showplay',()=>{ if(state.gen)drawRobust(); });
 function distribution(V,e){ const p=new Float32Array(V); let s=0; for(let i=0;i<V;i++){ let w=e==='high'?1:e==='mixed'?1/Math.pow(i+1,.7):1/Math.pow(i+1,1.9); p[i]=w; s+=w; } for(let i=0;i<V;i++)p[i]/=s; return p; }
+/* A synthetic lexicon so the token stream reads as words. Token ids are what the
+   watermark and detector actually operate on; this is a display-only decoding. */
+const LEX = ('the model writes one word at a time and most of these choices are nearly equal so a mark can ride the '+
+  'quiet tie between plausible tokens without changing what any reader would ever notice the key plus preceding '+
+  'context decides which candidate wins making the stream reproducible yet invisible later a detector walks the '+
+  'same text and counts how often it matched the keyed choice until coincidence is ruled out with growing '+
+  'confidence this weather turned cold and overcast grey while the system quietly recorded provenance for every '+
+  'generated passage across long documents short notes code and prose alike signal strength depends on entropy '+
+  'length and the number of low stakes decisions available to the sampler at each step').split(/\s+/);
+function tokenText(id){ return LEX[id % LEX.length]; }
+function asText(tokens, n){
+  const N = Math.min(n, tokens.length); let out=''; let sent=0; let cap=true;
+  for(let i=0;i<N;i++){ let w=tokenText(tokens[i]); if(cap){ w=w.charAt(0).toUpperCase()+w.slice(1); cap=false; }
+    out += (i? ' ':'') + w; sent++;
+    if((sent>=7 && tokens[i]%6===0) || sent>=17){ out+=(tokens[i]%3===0?',':'.'); if(out.endsWith('.'))cap=true; sent=0; } }
+  if(!/[.,]$/.test(out)) out+='…'; else if(out.endsWith(',')) out=out.slice(0,-1)+'…';
+  return out;
+}
 function keyBytes(k){ return enc.encode(k===undefined?$('#key').value:k); }
 function genStream(keyStr,V,N,ctx,lay){ const tokens=Uint32Array.from({length:V},(_,i)=>i),probs=distribution(V,state.entropy); const wm=new WasmWatermarker(keyBytes(keyStr),ctx,lay,state.scheme),out=new Uint32Array(N); for(let i=0;i<N;i++)out[i]=tokens[wm.step(tokens,probs)]; wm.free(); return out; }
 function generate(){ const V=+$('#voc').value,N=+$('#len').value,ctx=+$('#ctx').value,lay=+$('#lay').value; const t0=performance.now(); const out=genStream(undefined,V,N,ctx,lay); const dt=performance.now()-t0; return {out,V,N,ctx,lay,dt}; }
@@ -568,7 +593,7 @@ function fmtP(lp){ return !isFinite(lp)?'−∞':lp<-1000?lp.toFixed(0):lp.toFix
 function renderDetection(){ const g=state.gen,d=detectAll(g.out,g.ctx,g.lay),a=alpha(); const rows=[['standard',d.standard],['self-sync',d.selfsync],['exact (short)',d.exact],['wrong key',d.wrongkey]];
   $('#detRows').innerHTML=rows.map(([n,r])=>{ const yes=r.lp<=a,wrong=n==='wrong key',col=((wrong?!yes:yes)?css('--teal'):css('--muted')); return `<tr><td>${n}</td><td style="font-weight:700;color:${col}">${r.z.toFixed(1)}</td><td>${fmtP(r.lp)}</td><td style="color:${col}">${yes?'yes':'no'}</td></tr>`; }).join('');
   const yes=d.standard.lp<=a; $('#vDot').style.color=yes?css('--teal'):css('--muted'); $('#vTxt').style.color=yes?css('--teal'):css('--muted'); $('#vTxt').firstChild.textContent=yes?'Watermarked':'Not detected'; $('#vSub').textContent=`z = ${d.standard.z.toFixed(1)} · log₁₀p ${fmtP(d.standard.lp)} · ${d.standard.sp} keyed positions · α = 1e-${$('#alpha').value}`; $('#mKeyed').textContent=d.standard.sp.toLocaleString(); }
-function render(){ const g=state.gen; $('#mScheme').textContent=state.scheme.replace('tournament_nd','nd'); $('#mThru').textContent=Math.round(g.N/(g.dt/1000)).toLocaleString()+'/s'; $('#mTime').textContent=g.dt.toFixed(1)+' ms'; $('#stream').textContent=Array.from(g.out.slice(0,400)).join(' '); $('#genNote').textContent=`${g.N} tokens · vocab ${g.V} · ${state.entropy}-entropy. `+(state.entropy==='low'?'Low entropy ⇒ a faint mark, as expected.':'Plenty of low-stakes choices for the mark.'); renderDetection(); runRobust(); }
+function render(){ const g=state.gen; $('#mScheme').textContent=state.scheme.replace('tournament_nd','nd'); $('#mThru').textContent=Math.round(g.N/(g.dt/1000)).toLocaleString()+'/s'; $('#mTime').textContent=g.dt.toFixed(1)+' ms'; $('#stream').textContent=asText(g.out,110); $('#streamIds').textContent=Array.from(g.out.slice(0,300)).join(' '); $('#genNote').textContent=`${g.N} tokens · vocab ${g.V} · ${state.entropy}-entropy. `+(state.entropy==='low'?'Low entropy ⇒ a faint mark, as expected.':'Plenty of low-stakes choices for the mark.'); renderDetection(); runRobust(); }
 function attack(tokens,V,rate){ const out=Uint32Array.from(tokens); let s=12345; for(let i=0;i<out.length;i++){ s=(s*1103515245+12345)&0x7fffffff; if((s%1000)/1000<rate){ s=(s*1103515245+12345)&0x7fffffff; out[i]=s%V; } } return out; }
 function runRobust(){ const g=state.gen,rate=+$('#edit').value/100,atk=attack(g.out,g.V,rate),r=detect(atk,keyBytes(),g.ctx,g.lay,state.scheme),z=r.z_score; r.free(); state.robustPts=state.robustPts.filter(p=>p.rate!==rate); state.robustPts.push({rate,z}); state.robustPts.sort((a,b)=>a.rate-b.rate); $('#robNote').textContent=`at ${$('#edit').value}% edited: z = ${z.toFixed(1)} — ${z>6?'still unmistakable':z>3?'weakening but visible':'lost in the noise'}`; drawRobust(); }
 function drawRobust(){ const cv=$('#robustCv'),ratio=devicePixelRatio||1,w=cv.clientWidth||600,h=220; cv.width=w*ratio; cv.height=h*ratio; const x=cv.getContext('2d'); x.setTransform(ratio,0,0,ratio,0,0); const muted=css('--muted'),sig=css('--teal'),rule=css('--rule'); x.clearRect(0,0,w,h); const pad=32,x0=pad,x1=w-14,y0=h-24,y1=16,maxZ=Math.max(20,...state.robustPts.map(p=>p.z));
@@ -625,7 +650,7 @@ init().then(()=>{ $('#boot').remove(); $('#pgApp').hidden=false;
   /* ---------- coach tour ---------- */
   var STEPS = [
     { sel:'#pgApp > .card', title:'Configuration', body:'Set the secret key, scheme, and text “entropy”. More entropy and more length make a stronger, easier-to-detect mark. Every change re-runs live.' },
-    { sel:'.rescol > .card:nth-of-type(1)', title:'Generation', body:'How fast tokens are watermarked and how many positions actually carried the mark. The row of numbers is the emitted token stream.' },
+    { sel:'.rescol > .card:nth-of-type(1)', title:'Generation', body:'The watermarked output as readable text (decoded from a synthetic vocabulary), plus the raw token ids the watermark and detector actually operate on — and how many positions carried the mark.' },
     { sel:'.rescol > .card:nth-of-type(2)', title:'Detection', body:'Four detectors read the same text. Watch the wrong-key row sit at ~0 — that is the mark being key-specific. Slide α to set your alarm threshold.' },
     { sel:'.rescol > .card:nth-of-type(3)', title:'Secret message', body:'Hide a short payload inside the mark. Type a message and hit Embed & extract — it comes back bit-for-bit, spelled out by the key.' },
     { sel:'.rescol > .card:nth-of-type(4)', title:'Robustness', body:'Drag the edit slider to corrupt the text, and watch detection confidence hold, then fade past the floor. This is how the mark survives editing.' },
