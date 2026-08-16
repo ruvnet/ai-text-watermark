@@ -150,6 +150,68 @@
   @keyframes sp{ to{ transform:rotate(360deg); } }
 
   @media (prefers-reduced-motion: reduce){ html{ scroll-behavior:auto; } #story .reveal{ transition:none; opacity:1; transform:none; } #boot .spin{ animation:none; } }
+
+  /* ---------- banner CTA ---------- */
+  #play .banner{ display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:10px 16px; }
+  #play .banner-cta{ display:flex; gap:8px; flex:none; }
+  #play .banner-cta button{ font-family:var(--mono); font-size:.7rem; white-space:nowrap; border:1px solid var(--teal-dim); background:transparent; color:var(--teal); border-radius:999px; padding:7px 13px; cursor:pointer; }
+  #play .banner-cta button:hover{ background:rgba(79,214,207,.14); }
+
+  /* ---------- coach tour ---------- */
+  #coach[hidden]{ display:none; }
+  #coachRing{ position:fixed; z-index:200; border-radius:16px; pointer-events:none;
+    box-shadow:0 0 0 9999px rgba(4,7,13,.80), 0 0 0 2px var(--teal), 0 0 26px rgba(79,214,207,.5) inset;
+    transition:top .3s cubic-bezier(.2,.7,.2,1), left .3s cubic-bezier(.2,.7,.2,1), width .3s, height .3s; }
+  :root[data-theme="light"] #coachRing{ box-shadow:0 0 0 9999px rgba(20,26,36,.55), 0 0 0 2px var(--teal-dim), 0 0 26px rgba(42,157,151,.4) inset; }
+  #coachCatch{ position:fixed; inset:0; z-index:199; }
+  #coachCard{ position:fixed; z-index:201; width:min(340px,calc(100vw - 28px)); background:var(--card); border:1px solid var(--teal-dim);
+    border-radius:16px; padding:17px 18px 16px; box-shadow:0 20px 50px -12px rgba(0,0,0,.7); transition:top .3s, left .3s; }
+  #coachCard .ct-top{ display:flex; align-items:center; justify-content:space-between; margin-bottom:9px; }
+  #coachCard .ct-step{ font-family:var(--mono); font-size:.64rem; letter-spacing:.12em; color:var(--teal-dim); text-transform:uppercase; }
+  #coachCard .ct-skip{ font-family:var(--mono); font-size:.68rem; background:none; border:none; color:var(--muted); cursor:pointer; }
+  #coachCard .ct-skip:hover{ color:var(--fg); }
+  #coachCard h4{ font-family:var(--grot); font-weight:700; font-size:1.05rem; margin:0 0 .35rem; }
+  #coachCard p{ font-size:.9rem; color:var(--muted); margin:0 0 14px; line-height:1.55; }
+  #coachCard .ct-nav{ display:flex; gap:8px; justify-content:flex-end; }
+  #coachCard .ct-nav button{ font-family:var(--grot); font-weight:700; font-size:.82rem; border-radius:9px; padding:8px 15px; cursor:pointer; border:1px solid var(--rule); }
+  #coachCard .ct-nav .prev{ background:transparent; color:var(--fg); }
+  #coachCard .ct-nav .prev:hover{ border-color:var(--teal-dim); color:var(--teal); }
+  #coachCard .ct-nav .prev[disabled]{ opacity:.35; cursor:default; }
+  #coachCard .ct-nav .next{ background:var(--teal); color:#042420; border-color:var(--teal); }
+  #coachCard .ct-dots{ display:flex; gap:5px; margin-top:12px; justify-content:center; }
+  #coachCard .ct-dots i{ width:6px; height:6px; border-radius:50%; background:var(--rule); }
+  #coachCard .ct-dots i.on{ background:var(--teal); }
+
+  /* ---------- docs modal ---------- */
+  #docModal[hidden]{ display:none; }
+  #docModal{ position:fixed; inset:0; z-index:300; display:grid; place-items:center; padding:16px; }
+  #docModal .dm-backdrop{ position:absolute; inset:0; background:rgba(4,7,13,.72); backdrop-filter:blur(4px); }
+  :root[data-theme="light"] #docModal .dm-backdrop{ background:rgba(20,26,36,.4); }
+  #docModal .dm-panel{ position:relative; width:min(720px,100%); max-height:min(86vh,860px); overflow:hidden; display:flex; flex-direction:column;
+    background:var(--card); border:1px solid var(--rule); border-radius:20px; box-shadow:0 30px 80px -20px rgba(0,0,0,.8); }
+  #docModal .dm-head{ display:flex; align-items:center; justify-content:space-between; gap:12px; padding:18px 20px 14px; border-bottom:1px solid var(--rule); flex:none; }
+  #docModal .dm-head h3{ font-family:var(--grot); font-weight:700; font-size:1.15rem; margin:0; display:flex; align-items:center; gap:9px; }
+  #docModal .dm-head .lk{ filter:drop-shadow(0 0 8px rgba(79,214,207,.5)); }
+  #docModal .dm-close{ font-family:var(--mono); font-size:1rem; width:34px; height:34px; border-radius:10px; border:1px solid var(--rule); background:transparent; color:var(--fg); cursor:pointer; flex:none; }
+  #docModal .dm-close:hover{ border-color:var(--danger); color:var(--danger); }
+  #docModal .dm-body{ overflow-y:auto; padding:18px 20px 24px; }
+  #docModal .dm-body h4{ font-family:var(--grot); font-weight:700; font-size:.95rem; margin:20px 0 8px; color:var(--teal); }
+  #docModal .dm-body h4:first-child{ margin-top:0; }
+  #docModal .dm-body p{ font-size:.9rem; color:var(--muted); margin:0 0 10px; line-height:1.6; }
+  #docModal .dm-body b{ color:var(--fg); }
+  #docModal .dm-body code{ font-family:var(--mono); font-size:.82em; background:rgba(139,150,166,.16); padding:.1em .4em; border-radius:5px; color:var(--fg); }
+  #docModal .dm-body pre{ background:#08101c; color:#dbe6f2; border:1px solid var(--rule); border-radius:11px; padding:12px 14px; overflow-x:auto; font-family:var(--mono); font-size:.78rem; line-height:1.7; margin:0 0 12px; }
+  :root[data-theme="light"] #docModal .dm-body pre{ background:#0d1522; }
+  #docModal .dm-body pre .cm{ color:#6b7a90; } #docModal .dm-body pre .kw{ color:#c792ea; } #docModal .dm-body pre .fn{ color:var(--teal); } #docModal .dm-body pre .st{ color:var(--gold); }
+  #docModal .dm-body table{ width:100%; border-collapse:collapse; font-size:.84rem; margin:0 0 12px; }
+  #docModal .dm-body th,#docModal .dm-body td{ text-align:left; padding:7px 8px; border-bottom:1px solid var(--rule); vertical-align:top; }
+  #docModal .dm-body th{ font-family:var(--mono); font-size:.66rem; text-transform:uppercase; letter-spacing:.05em; color:var(--muted); font-weight:500; }
+  #docModal .dm-body td code{ white-space:nowrap; }
+  #docModal .dm-links{ display:flex; flex-wrap:wrap; gap:8px; margin-top:6px; }
+  #docModal .dm-links a{ font-family:var(--mono); font-size:.76rem; text-decoration:none; color:var(--teal); border:1px solid var(--teal-dim); border-radius:999px; padding:7px 13px; }
+  #docModal .dm-links a:hover{ background:rgba(79,214,207,.12); }
+  #docModal .dm-body .note{ font-family:var(--mono); font-size:.72rem; color:var(--muted); border-left:2px solid var(--gold); padding-left:11px; }
+  @media(max-width:560px){ #play .banner{ flex-direction:column; align-items:flex-start; } #play .banner-cta{ width:100%; } #play .banner-cta button{ flex:1; } }
 </style>
 </head>
 <body>
@@ -165,6 +227,7 @@
   <div class="right">
     <a href="https://www.npmjs.com/package/@claude-flow/watermark" target="_blank" rel="noopener">npm</a>
     <a href="https://github.com/ruvnet/ai-text-watermark" target="_blank" rel="noopener">github</a>
+    <button class="tbtn" id="help" aria-label="documentation" title="Documentation">?</button>
     <button class="tbtn" id="theme" aria-label="theme">◐</button>
   </div>
 </nav>
@@ -274,7 +337,10 @@
     <div id="boot"><span class="spin"></span>loading WebAssembly module…</div>
   </div>
   <div class="inner" id="pgApp" hidden>
-    <div class="banner">Everything here runs entirely in your browser via the real <b>@claude-flow/watermark</b> WASM — nothing leaves the page. Tokens are synthetic (a stand-in for a model's candidate distribution).</div>
+    <div class="banner">
+      <span>Everything here runs entirely in your browser via the real <b>@claude-flow/watermark</b> WASM — nothing leaves the page. Tokens are synthetic (a stand-in for a model's candidate distribution).</span>
+      <span class="banner-cta"><button id="startTour">▶ Take the 60-second tour</button><button id="openDocs">📖 Docs</button></span>
+    </div>
 
     <section class="card">
       <h2>Configuration</h2>
@@ -328,6 +394,85 @@
         <figure style="margin:0"><canvas id="robustCv" width="640" height="220"></canvas></figure>
         <div class="note" id="robNote">Edit the watermarked text and watch confidence hold, then fade.</div>
       </section>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== TOUR + DOCS ==================== -->
+<div id="coach" hidden>
+  <div id="coachCatch"></div>
+  <div id="coachRing"></div>
+  <div id="coachCard" role="dialog" aria-modal="true" aria-label="Guided tour">
+    <div class="ct-top"><span class="ct-step" id="ctStep">1 / 6</span><button class="ct-skip" id="ctSkip">Skip tour</button></div>
+    <h4 id="ctTitle"></h4>
+    <p id="ctBody"></p>
+    <div class="ct-nav"><button class="prev" id="ctPrev">Back</button><button class="next" id="ctNext">Next</button></div>
+    <div class="ct-dots" id="ctDots"></div>
+  </div>
+</div>
+
+<div id="docModal" hidden>
+  <div class="dm-backdrop" id="dmBackdrop"></div>
+  <div class="dm-panel" role="dialog" aria-modal="true" aria-label="Documentation">
+    <div class="dm-head">
+      <h3><span class="lk">🔏</span> AI Text Watermark — docs</h3>
+      <button class="dm-close" id="dmClose" aria-label="Close documentation">✕</button>
+    </div>
+    <div class="dm-body">
+      <h4>What this playground shows</h4>
+      <p>Everything runs in your browser on the real <b>@claude-flow/watermark</b> WebAssembly core — no server, nothing leaves the page. The "tokens" are a <b>synthetic</b> stand-in for a language model's per-step candidate distribution, so you can watch generation and detection without wiring up a model. In production you feed the watermarker your model's real candidates (or logits, via the proxy).</p>
+
+      <h4>The one idea</h4>
+      <p>At most steps several next words are equally good. The watermark rides that <b>tie</b> — a secret <b>key</b> plus the preceding tokens decide which tied word wins, so the odds are unchanged but the choice is reproducible. A detector with the key re-walks the text and counts how often it matched; enough matches and coincidence is ruled out. Confidence grows with <b>length</b> and <b>entropy</b> (number of ties), which is why the sliders matter.</p>
+
+      <h4>Reading the panels</h4>
+      <p><b>Generation capabilities</b> — throughput + how many positions actually carried the mark. <b>Detection</b> — four detectors, including a <b>wrong-key</b> row that reads ~0 (proving key-specificity) and an alarm threshold α you can move. <b>Secret message</b> — a hidden multi-bit payload (see below). <b>Robustness</b> — drag the edit slider and watch confidence hold, then fade.</p>
+
+      <h4>Install</h4>
+      <pre><span class="cm"># JavaScript / TypeScript</span>
+npm install @claude-flow/watermark
+<span class="cm"># Rust</span>
+cargo add ruflo-watermark</pre>
+
+      <h4>Generate &amp; detect (Node)</h4>
+      <pre><span class="kw">const</span> { Watermarker, detect } = <span class="fn">require</span>(<span class="st">'@claude-flow/watermark'</span>);
+<span class="kw">const</span> wm = <span class="kw">new</span> <span class="fn">Watermarker</span>({ key: <span class="st">'my-secret'</span>, scheme: <span class="st">'gumbel'</span> });
+<span class="kw">const</span> out = candidatesPerStep.<span class="fn">map</span>((c, i) => c[wm.<span class="fn">step</span>(c, probs[i])]);
+<span class="fn">detect</span>(out, { key: <span class="st">'my-secret'</span>, scheme: <span class="st">'gumbel'</span> }).<span class="fn">isWatermarked</span>(<span class="st">1e-6</span>); <span class="cm">// true</span></pre>
+
+      <h4>Ultra-low-latency proxy (logits in → token out)</h4>
+      <p>Drop <code>StreamProxy</code> into a decode loop: it takes raw logits (or a truncated top-k <code>(ids, logprobs)</code> set from an OpenAI-style API), applies temperature + top-k/top-p to match your sampler, and returns the watermarked token id — allocation-free after warmup.</p>
+      <pre><span class="kw">const</span> { StreamProxy } = <span class="fn">require</span>(<span class="st">'@claude-flow/watermark'</span>);
+<span class="kw">const</span> p = <span class="kw">new</span> <span class="fn">StreamProxy</span>({ key: <span class="st">'my-secret'</span>, temperature: <span class="st">0.9</span>, topK: <span class="st">40</span>, topP: <span class="st">0.95</span> });
+<span class="kw">for</span> (<span class="kw">const</span> logits <span class="kw">of</span> decodeSteps) out.<span class="fn">push</span>(p.<span class="fn">pushLogits</span>(logits));</pre>
+
+      <h4>Schemes &amp; detectors</h4>
+      <table>
+        <tr><th>scheme</th><th>property</th></tr>
+        <tr><td><code>gumbel</code></td><td>Provably distortion-free — the model's word odds are unchanged (default).</td></tr>
+        <tr><td><code>tournament</code></td><td>SynthID-Text tournament — a stronger mark for a whisper of bias.</td></tr>
+        <tr><td><code>tournament_nd</code></td><td>Non-distortionary on average (key-averaged).</td></tr>
+      </table>
+      <table>
+        <tr><th>detector</th><th>for</th></tr>
+        <tr><td><code>detect</code></td><td>the scheme's standard test</td></tr>
+        <tr><td><code>detectSelfSync</code></td><td>indel-robust — survives edits/deletions/reordering</td></tr>
+        <tr><td><code>detectExact</code></td><td>short text — exact p-values where the normal approximation misleads</td></tr>
+      </table>
+
+      <h4>Secret message (multi-bit)</h4>
+      <p>Each message bit is carried by <b>which of two key-derived streams</b> watermarks a block of tokens; extraction detects each block under both keys and takes the stronger. So the same text, read with the key, spells out a short payload (a model id, a run tag). Capacity trades off against robustness — roughly ~90 tokens per bit for a clean read.</p>
+
+      <h4>Honest limits</h4>
+      <p>Short or factual text carries almost no mark (few ties). A wrong key sees nothing, and the mark holds <b>no information about you</b> — it answers only "was a keyed model likely involved?". This toolkit only <b>writes</b> and <b>checks</b> marks — there is deliberately no removal / laundering tool.</p>
+
+      <div class="dm-links">
+        <a href="https://www.npmjs.com/package/@claude-flow/watermark" target="_blank" rel="noopener">npm</a>
+        <a href="https://crates.io/crates/ruflo-watermark" target="_blank" rel="noopener">crates.io</a>
+        <a href="https://github.com/ruvnet/ai-text-watermark" target="_blank" rel="noopener">GitHub</a>
+        <a href="https://github.com/ruvnet/ai-text-watermark/tree/main/docs/adr" target="_blank" rel="noopener">ADRs</a>
+      </div>
+      <p class="note" style="margin-top:14px">Method: SynthID-Text (Dathathri et al., Nature 2024) and the Aaronson (2022) / Kuditipudi et al. (2024) distortion-free family. MIT © rUv.</p>
     </div>
   </div>
 </div>
@@ -456,7 +601,120 @@ $('#embed').addEventListener('click',()=>{ const b=$('#embed'); b.disabled=true;
 init().then(()=>{ $('#boot').remove(); $('#pgApp').hidden=false;
   $('#go').addEventListener('click',()=>{ const b=$('#go'); b.disabled=true; b.textContent='working…'; setTimeout(()=>{ try{ state.robustPts=[]; state.gen=generate(); render(); } finally{ b.disabled=false; b.textContent='⚡ Generate & detect'; } },30); });
   state.gen=generate(); render(); embedMessage();
+  window.dispatchEvent(new Event('playready'));
 }).catch(e=>{ const b=$('#boot'); if(b)b.innerHTML='Failed to load WASM: '+e.message; });
+</script>
+
+<script>
+/* Guided tour (spotlight coach) + documentation modal */
+(function(){
+  var reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var TOUR_KEY = 'wm_tour_v2';
+  var $ = function(s){ return document.querySelector(s); };
+
+  /* ---------- docs modal ---------- */
+  var modal = $('#docModal'), lastFocus = null;
+  function openDocs(){ lastFocus = document.activeElement; modal.hidden = false; var c=$('#dmClose'); if(c) c.focus(); }
+  function closeDocs(){ modal.hidden = true; if(lastFocus && lastFocus.focus) lastFocus.focus(); }
+  $('#help').addEventListener('click', openDocs);
+  $('#dmClose').addEventListener('click', closeDocs);
+  $('#dmBackdrop').addEventListener('click', closeDocs);
+  document.addEventListener('keydown', function(e){ if(e.key==='Escape' && !modal.hidden) closeDocs(); });
+  var od = $('#openDocs'); if(od) od.addEventListener('click', openDocs);
+
+  /* ---------- coach tour ---------- */
+  var STEPS = [
+    { sel:'#pgApp > .card', title:'Configuration', body:'Set the secret key, scheme, and text “entropy”. More entropy and more length make a stronger, easier-to-detect mark. Every change re-runs live.' },
+    { sel:'.rescol > .card:nth-of-type(1)', title:'Generation', body:'How fast tokens are watermarked and how many positions actually carried the mark. The row of numbers is the emitted token stream.' },
+    { sel:'.rescol > .card:nth-of-type(2)', title:'Detection', body:'Four detectors read the same text. Watch the wrong-key row sit at ~0 — that is the mark being key-specific. Slide α to set your alarm threshold.' },
+    { sel:'.rescol > .card:nth-of-type(3)', title:'Secret message', body:'Hide a short payload inside the mark. Type a message and hit Embed & extract — it comes back bit-for-bit, spelled out by the key.' },
+    { sel:'.rescol > .card:nth-of-type(4)', title:'Robustness', body:'Drag the edit slider to corrupt the text, and watch detection confidence hold, then fade past the floor. This is how the mark survives editing.' },
+    { sel:'#help', title:'Docs & install', body:'That’s the tour. Install, the full API, and the ultra-low-latency proxy all live in Docs — open it any time with the “?” button.' },
+  ];
+  var coach = $('#coach'), ring = $('#coachRing'), card = $('#coachCard'),
+      ttl = $('#ctTitle'), body = $('#ctBody'), stepEl = $('#ctStep'),
+      prev = $('#ctPrev'), next = $('#ctNext'), dots = $('#ctDots');
+  var idx = 0, active = false;
+
+  dots.innerHTML = STEPS.map(function(){ return '<i></i>'; }).join('');
+
+  function clamp(v, lo, hi){ return Math.max(lo, Math.min(hi, v)); }
+
+  function position(){
+    var step = STEPS[idx], el = document.querySelector(step.sel);
+    if(!el){ return; }
+    var r = el.getBoundingClientRect(), pad = 8;
+    var top = clamp(r.top - pad, 6, innerHeight - 6),
+        left = clamp(r.left - pad, 6, innerWidth - 6),
+        w = Math.min(r.width + pad*2, innerWidth - left - 6),
+        h = Math.min(r.height + pad*2, innerHeight - top - 6);
+    ring.style.top = top+'px'; ring.style.left = left+'px';
+    ring.style.width = w+'px'; ring.style.height = h+'px';
+    // Card: below the ring if it fits, else above, else pinned bottom.
+    var ch = card.offsetHeight, cw = card.offsetWidth;
+    var cardTop = top + h + 12;
+    if(cardTop + ch > innerHeight - 10) cardTop = top - ch - 12;
+    if(cardTop < 10) cardTop = clamp((innerHeight - ch)/2, 10, innerHeight - ch - 10);
+    var cardLeft = clamp(left, 14, innerWidth - cw - 14);
+    card.style.top = cardTop+'px'; card.style.left = cardLeft+'px';
+  }
+
+  function goto(i){
+    idx = clamp(i, 0, STEPS.length-1);
+    var step = STEPS[idx], el = document.querySelector(step.sel);
+    if(!el){ if(idx < STEPS.length-1){ goto(idx+1); } return; }
+    ttl.textContent = step.title; body.textContent = step.body;
+    stepEl.textContent = (idx+1)+' / '+STEPS.length;
+    prev.disabled = idx===0;
+    next.textContent = idx===STEPS.length-1 ? 'Finish' : 'Next';
+    [].forEach.call(dots.children, function(d,j){ d.classList.toggle('on', j===idx); });
+    el.scrollIntoView({ block:'center', behavior: reduce ? 'auto' : 'smooth' });
+    // position after the scroll settles
+    requestAnimationFrame(function(){ position(); setTimeout(position, reduce?0:340); });
+  }
+
+  function start(){
+    if(active) return;
+    // Ensure the playground view is showing.
+    if($('#play') && !$('#play').classList.contains('on')){ $('#mPlay').click(); }
+    if($('#pgApp') && $('#pgApp').hidden){ return; } // not booted yet
+    active = true; coach.hidden = false; goto(0);
+    addEventListener('scroll', position, { passive:true });
+    addEventListener('resize', position);
+  }
+  function end(){
+    active = false; coach.hidden = true;
+    try{ localStorage.setItem(TOUR_KEY, 'done'); }catch(e){}
+    removeEventListener('scroll', position); removeEventListener('resize', position);
+  }
+
+  next.addEventListener('click', function(){ idx===STEPS.length-1 ? end() : goto(idx+1); });
+  prev.addEventListener('click', function(){ goto(idx-1); });
+  $('#ctSkip').addEventListener('click', end);
+  $('#coachCatch').addEventListener('click', function(){ /* absorb; use buttons */ });
+  document.addEventListener('keydown', function(e){
+    if(!active) return;
+    if(e.key==='Escape'){ end(); }
+    else if(e.key==='ArrowRight' || e.key==='Enter'){ idx===STEPS.length-1 ? end() : goto(idx+1); }
+    else if(e.key==='ArrowLeft'){ goto(idx-1); }
+  });
+
+  var startBtn = $('#startTour');
+  if(startBtn) startBtn.addEventListener('click', function(){ try{ localStorage.removeItem(TOUR_KEY); }catch(e){} start(); });
+
+  // Auto-offer once, after the playground is ready and visible.
+  var offered = false;
+  function maybeAutoStart(){
+    if(offered) return;
+    var done; try{ done = localStorage.getItem(TOUR_KEY); }catch(e){ done = 'done'; }
+    if(done) { offered = true; return; }
+    if($('#pgApp') && !$('#pgApp').hidden && $('#play').classList.contains('on')){
+      offered = true; setTimeout(start, 500);
+    }
+  }
+  addEventListener('playready', maybeAutoStart);
+  addEventListener('showplay', function(){ setTimeout(maybeAutoStart, 60); });
+})();
 </script>
 </body>
 </html>
