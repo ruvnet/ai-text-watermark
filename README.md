@@ -166,6 +166,9 @@ Every detection returns `{ zScore, pValue, log10P, scoredPositions, isWatermarke
 
 - [ADR-383 — Watermarking (SynthID-Text) as a Rust/WASM component](./docs/adr/ADR-383-watermarking-synthid-rust-wasm.md)
 - [ADR-384 — Generalized bounded-evolution methodology (the detector-tuner's foundation)](./docs/adr/ADR-384-generalized-bounded-evolution-methodology.md)
+- [ADR-385 — Ultra-low-latency streaming watermark proxy (`StreamProxy`)](./docs/adr/ADR-385-ultra-low-latency-streaming-proxy.md)
+- [ADR-386 — Multi-bit secret-message watermarking (per-block key derivation)](./docs/adr/ADR-386-multi-bit-secret-message-watermark.md)
+- [ADR-387 — Watermarking as a Cognitum service in meta-llm / meta-proxy](./docs/adr/ADR-387-metallm-watermarking-service.md)
 
 ## Method & prior art
 
