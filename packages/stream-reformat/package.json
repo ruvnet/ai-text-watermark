@@ -1,0 +1,20 @@
+{
+  "name": "llm-stream-reformat",
+  "version": "0.1.0",
+  "description": "Inflight LLM-stream reformatting — separate a reasoning model's thinking from its answer, collapse repetition, and normalize whitespace, while the tokens are still arriving. Parses Google Vertex / OpenRouter / meta-llm SSE. Rust + WASM (built on ruvnet/midstream temporal-compare), Node + browser.",
+  "keywords": ["llm", "streaming", "sse", "reformat", "midstream", "gemini", "openrouter", "reasoning", "thinking", "wasm"],
+  "license": "MIT",
+  "author": "rUv (https://github.com/ruvnet)",
+  "homepage": "https://github.com/ruvnet/ai-text-watermark",
+  "repository": { "type": "git", "url": "git+https://github.com/ruvnet/ai-text-watermark.git" },
+  "bugs": { "url": "https://github.com/ruvnet/ai-text-watermark/issues" },
+  "type": "commonjs",
+  "main": "index.js",
+  "types": "index.d.ts",
+  "exports": {
+    ".": { "types": "./index.d.ts", "require": "./index.js" },
+    "./web": { "types": "./web/index.d.ts", "import": "./web/index.mjs" },
+    "./package.json": "./package.json"
+  },
+  "files": ["index.js", "index.d.ts", "wasm/", "web/", "README.md"]
+}
