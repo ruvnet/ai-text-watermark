@@ -1,6 +1,6 @@
 {
   "name": "ai-text-watermark",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "description": "Invisible, key-verifiable watermarks for AI/LLM text (SynthID-Text style) in Rust + WebAssembly. Generate, detect, embed a secret provenance message, and run an ultra-low-latency decode-loop proxy — Node and browser. Standalone wrapper around @claude-flow/watermark.",
   "keywords": ["ai-text-watermark","llm-watermark","synthid","synthid-text","ai-content-detection","ai-provenance","eu-ai-act","text-watermark","wasm","distortion-free-watermark","gumbel-watermark","content-credentials"],
   "license": "MIT",
@@ -18,5 +18,5 @@
     "./package.json": "./package.json"
   },
   "files": ["index.js","index.mjs","index.d.ts","web.mjs","web.d.ts","README.md"],
-  "dependencies": { "@claude-flow/watermark": "^0.3.0" }
+  "dependencies": { "@claude-flow/watermark": "^0.4.0" }
 }
