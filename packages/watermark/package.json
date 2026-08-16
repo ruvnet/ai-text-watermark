@@ -1,6 +1,6 @@
 {
   "name": "@claude-flow/watermark",
-  "version": "0.4.0",
+  "version": "0.4.1",
   "description": "SynthID-Text-style LLM text watermarking (generation + detection) as a WASM module — Tournament / non-distortionary / distortion-free schemes, indel-robust and short-text detectors. Node + browser. No watermark-removal tooling.",
   "license": "MIT",
   "author": "rUv <ruv@ruv.net>",
