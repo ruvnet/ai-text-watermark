@@ -4,14 +4,14 @@
   "description": "SynthID-Text-style LLM text watermarking (generation + detection) as a WASM module — Tournament / non-distortionary / distortion-free schemes, indel-robust and short-text detectors. Node + browser. No watermark-removal tooling.",
   "license": "MIT",
   "author": "rUv <ruv@ruv.net>",
-  "homepage": "https://github.com/ruvnet/ruflo/tree/main/v3/crates/ruflo-watermark",
+  "homepage": "https://github.com/ruvnet/ai-text-watermark/tree/main/packages/watermark",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/ruvnet/ruflo.git",
-    "directory": "v3/@claude-flow/watermark"
+    "url": "git+https://github.com/ruvnet/ai-text-watermark.git",
+    "directory": "packages/watermark"
   },
   "bugs": {
-    "url": "https://github.com/ruvnet/ruflo/issues"
+    "url": "https://github.com/ruvnet/ai-text-watermark/issues"
   },
   "keywords": [
     "watermark",
