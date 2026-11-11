@@ -89,4 +89,4 @@ jobs:
             node "node_modules/$name/test/smoke.cjs"
           done
       - name: README quickstart snippets
-        run: node scripts/ci/run-quickstarts.mjs "$RUNNER_TEMP/app"
+        run: node scripts/ci/run-quickstarts.mjs "$RUNNER_TEMP/app" --min 2
