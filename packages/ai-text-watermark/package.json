@@ -17,6 +17,7 @@
     "./web": { "types": "./web.d.ts", "import": "./web.mjs" },
     "./package.json": "./package.json"
   },
+  "scripts": { "test": "node test/smoke.cjs" },
   "files": ["index.js","index.mjs","index.d.ts","web.mjs","web.d.ts","README.md"],
   "dependencies": { "@claude-flow/watermark": "^0.4.0" }
 }
