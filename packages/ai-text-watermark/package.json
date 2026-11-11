@@ -1,6 +1,6 @@
 {
   "name": "ai-text-watermark",
-  "version": "0.4.0",
+  "version": "0.4.1",
   "description": "Invisible, key-verifiable watermarks for AI/LLM text (SynthID-Text style) in Rust + WebAssembly: generate, detect, embed a provenance message, stream-proxy. Node + browser.",
   "keywords": ["ai-text-watermark","llm-watermark","synthid","synthid-text","ai-content-detection","ai-provenance","eu-ai-act","text-watermark","wasm","distortion-free-watermark","gumbel-watermark","content-credentials"],
   "license": "MIT",

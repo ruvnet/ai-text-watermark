@@ -1,6 +1,6 @@
 {
   "name": "llm-stream-reformat",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Reformat a live LLM token stream as it arrives: split reasoning from answer, collapse repetition, normalize whitespace. Parses Vertex, OpenRouter, meta-llm SSE. Rust + WASM.",
   "keywords": ["llm", "streaming", "sse", "reformat", "midstream", "gemini", "openrouter", "reasoning", "thinking", "wasm", "vertex-ai", "llm-streaming"],
   "license": "MIT",

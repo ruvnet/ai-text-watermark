@@ -10,6 +10,7 @@ Rust + WebAssembly, built on the real [`ruvnet/midstream`](https://github.com/ru
 npm install llm-stream-reformat
 ```
 
+<!-- quickstart:run -->
 ```js
 const { Reformatter } = require('llm-stream-reformat');
 

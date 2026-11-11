@@ -10,6 +10,7 @@ This is a thin standalone wrapper that re-exports **[`@claude-flow/watermark`](h
 npm install ai-text-watermark
 ```
 
+<!-- quickstart:run -->
 ```js
 const { Watermarker, detect } = require('ai-text-watermark');
 
