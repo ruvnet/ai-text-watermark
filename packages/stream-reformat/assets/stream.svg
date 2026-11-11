@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 150" width="640" height="150" role="img" aria-label="An SSE token stream is split live into a thinking channel and an answer channel">
+  <title>llm-stream-reformat: thinking and answer split while tokens arrive</title>
+  <rect width="640" height="150" rx="12" fill="#0f172a"/>
+  <text x="20" y="28" fill="#e2e8f0" font-family="ui-monospace,monospace" font-size="14">SSE stream → Reformatter → channels</text>
+  <g font-family="ui-monospace,monospace" font-size="12">
+    <rect x="20" y="45" width="180" height="90" rx="8" fill="#1e293b" stroke="#334155"/>
+    <text x="32" y="65" fill="#94a3b8">data: {...}</text>
+    <circle cx="200" cy="90" r="5" fill="#38bdf8">
+      <animate attributeName="cx" values="200;330" dur="1.2s" repeatCount="indefinite"/>
+      <animate attributeName="cy" values="90;65" dur="1.2s" repeatCount="indefinite"/>
+    </circle>
+    <circle cx="200" cy="90" r="5" fill="#f59e0b">
+      <animate attributeName="cx" values="200;330" dur="1.2s" begin="0.6s" repeatCount="indefinite"/>
+      <animate attributeName="cy" values="90;115" dur="1.2s" begin="0.6s" repeatCount="indefinite"/>
+    </circle>
+    <rect x="330" y="48" width="290" height="34" rx="6" fill="#1e293b" stroke="#38bdf8"/>
+    <text x="342" y="70" fill="#38bdf8">thinking │ <tspan fill="#cbd5e1">Add the two numbers.</tspan></text>
+    <rect x="330" y="98" width="290" height="34" rx="6" fill="#1e293b" stroke="#f59e0b"/>
+    <text x="342" y="120" fill="#f59e0b">answer   │ <tspan fill="#cbd5e1">2 + 2 = 4</tspan></text>
+    <rect x="32" y="75" width="150" height="8" rx="4" fill="#334155"/>
+    <rect x="32" y="75" width="0" height="8" rx="4" fill="#38bdf8">
+      <animate attributeName="width" values="0;150" dur="1.2s" repeatCount="indefinite"/>
+    </rect>
+    <rect x="32" y="95" width="110" height="8" rx="4" fill="#334155"/>
+    <rect x="32" y="115" width="130" height="8" rx="4" fill="#334155"/>
+  </g>
+</svg>
