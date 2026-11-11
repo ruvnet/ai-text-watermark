@@ -16,5 +16,6 @@
     "./web": { "types": "./web/index.d.ts", "import": "./web/index.mjs" },
     "./package.json": "./package.json"
   },
+  "scripts": { "test": "node test/smoke.cjs" },
   "files": ["index.js", "index.d.ts", "wasm/", "web/", "README.md"]
 }

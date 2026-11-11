@@ -1,0 +1,92 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  rust:
+    name: cargo test (${{ matrix.crate }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        crate: [ruflo-watermark, stream-reformat]
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+      - uses: dtolnay/rust-toolchain@4cda84d5c5c54efe2404f9d843567869ab1699d4
+        with:
+          toolchain: stable
+      - uses: Swatinem/rust-cache@e18b497796c12c097a38f9edb9d0641fb99eee32
+        with:
+          workspaces: crates/${{ matrix.crate }}
+      - name: cargo test
+        working-directory: crates/${{ matrix.crate }}
+        run: cargo test --locked
+
+  npm-test:
+    name: npm test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 20
+      - name: "@claude-flow/watermark (packages/watermark)"
+        working-directory: packages/watermark
+        run: npm test
+      - name: llm-stream-reformat
+        working-directory: packages/stream-reformat
+        run: npm test
+      - name: ai-text-watermark (against the in-repo watermark package)
+        working-directory: packages/ai-text-watermark
+        run: |
+          npm install --no-save --no-package-lock --no-audit --no-fund ../watermark
+          npm test
+
+  pack-smoke:
+    name: packed tarball install + README quickstarts
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 20
+      - name: npm pack
+        run: |
+          mkdir -p "$RUNNER_TEMP/dist"
+          for p in watermark ai-text-watermark stream-reformat; do
+            (cd "packages/$p" && npm pack --pack-destination "$RUNNER_TEMP/dist")
+          done
+          ls -l "$RUNNER_TEMP/dist"
+      - name: install tarballs into a fresh project
+        run: |
+          mkdir -p "$RUNNER_TEMP/app"
+          cd "$RUNNER_TEMP/app"
+          npm init -y >/dev/null
+          npm install --no-audit --no-fund "$RUNNER_TEMP"/dist/*.tgz
+          npm ls
+      - name: require/import each installed package (CJS + ESM)
+        run: |
+          cp scripts/ci/installed-smoke.mjs "$RUNNER_TEMP/app/"
+          node "$RUNNER_TEMP/app/installed-smoke.mjs"
+      - name: package smoke tests against the installed tarballs
+        working-directory: ${{ runner.temp }}/app
+        run: |
+          # <repo dir>:<npm name>
+          for pair in watermark:@claude-flow/watermark ai-text-watermark:ai-text-watermark stream-reformat:llm-stream-reformat; do
+            dir=${pair%%:*}; name=${pair#*:}
+            mkdir -p "node_modules/$name/test"
+            cp "$GITHUB_WORKSPACE/packages/$dir/test/smoke.cjs" "node_modules/$name/test/"
+            node "node_modules/$name/test/smoke.cjs"
+          done
+      - name: README quickstart snippets
+        run: node scripts/ci/run-quickstarts.mjs "$RUNNER_TEMP/app"
